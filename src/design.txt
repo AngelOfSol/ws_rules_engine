@@ -1,12 +1,72 @@
-Goals:
+High-level Goals:
 - Enforce rules for the game of Weiss Schwarz
 - Allow arbitrary cards to be executed within the context of the game
 - Inform API consumer of possible actions allowed to be taken
+- Prevent API consumer from attempting impossible actions
 - Provide events and game state to API consumer
-Maybes:
-- Allow arbitrary pausing of game state to be resumed later from a file
-Non-goals:
+- Reasonable performance to the point that any IO is more impactful than the engine itself
+- Don't leak information about possibly hidden gamestate due to API (example, always pausing at a location a player could play a card even if they have no cards to play)
+High-level Maybes:
+- Allow arbitrary pausing of game state to be resumed later from a raw data
+High-level Non-goals:
+- Ultra high performance 
 - Render the game
 - Handle card games other than Weiss Schwarz
 - Provide turing-complete coding language
 
+Design:
+
+Biggest block of execution is one player's turn (NOT one pair of turns)
+API will allow for standalone rules engine, or integrated rule engine
+Engine will not conduct IO directly, instead it will provide details of what information it needs
+Engine will stall while waiting for IO to be conducted
+
+
+Structure
+
+struct GameState {
+    players: [PlayerData; 2],
+    active_player: usize,
+    current_phase: Phase,
+    turn_number: usize,
+}
+
+enum Phase {
+    Untap,
+    Draw,
+    Clock,
+    ...
+}
+
+struct PlayerData {
+    deck: Zone,
+    hand: Zone,
+    level: Zone,
+    ...
+}
+
+struct Zone {
+    content: Vec<CardId>,
+}
+
+
+
+struct GameData {
+  cards: Vec<CardData>,
+}
+
+struct CardData {
+    base_stats: CardStats,
+    abilities: Vec<CardAbilities>,
+}
+
+struct CardAbilities {
+    // this contains executable data
+    ???
+}
+
+struct CardStats {
+    power: i32,
+    level: i32,
+    ...
+}
