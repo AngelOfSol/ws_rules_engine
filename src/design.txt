@@ -1,0 +1,12 @@
+Goals:
+- Enforce rules for the game of Weiss Schwarz
+- Allow arbitrary cards to be executed within the context of the game
+- Inform API consumer of possible actions allowed to be taken
+- Provide events and game state to API consumer
+Maybes:
+- Allow arbitrary pausing of game state to be resumed later from a file
+Non-goals:
+- Render the game
+- Handle card games other than Weiss Schwarz
+- Provide turing-complete coding language
+
