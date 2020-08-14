@@ -6,8 +6,10 @@ High-level Goals:
 - Provide events and game state to API consumer
 - Reasonable performance to the point that any IO is more impactful than the engine itself
 - Don't leak information about possibly hidden gamestate due to API (example, always pausing at a location a player could play a card even if they have no cards to play)
+- Requirements doc here: https://heartofthecards.com/ws/manual.html
 High-level Maybes:
 - Allow arbitrary pausing of game state to be resumed later from a raw data
+- Cycle analysis to prevent infinite loops
 High-level Non-goals:
 - Ultra high performance 
 - Render the game
@@ -21,7 +23,6 @@ API will allow for standalone rules engine, or integrated rule engine
 Engine will not conduct IO directly, instead it will provide details of what information it needs
 Engine will stall while waiting for IO to be conducted
 Cards will include bits of code or bytecode to be executed as card effects
-
 
 Structure
 
