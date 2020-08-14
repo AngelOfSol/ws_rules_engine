@@ -2,4 +2,6 @@
 pub enum Phase {
     Start,
     End,
+    Draw,
+    Clock,
 }

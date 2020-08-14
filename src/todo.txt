@@ -2,7 +2,16 @@
 [x] setup basic gamedata
 [x] create start and end turns
 [x] display start and end turn events
-[] create draw phase
-[] display draw event
-[] create clock phase
-[] ask player to clock or not
+[x] create draw phase
+    [x] initialize decks
+    [x] create phase
+    [x] log phase change event
+    [x] add card from top of deck to top of hand
+[x] display draw event
+[x] create clock phase
+    [x] log phase change
+    [x] ask turn_player what card to clock (or none)
+    [x] move chosen card top of the clock
+    [x] log clocked card
+    [x] draw 2 cards
+[x] ask player to clock or not

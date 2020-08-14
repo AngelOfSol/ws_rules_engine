@@ -3,6 +3,7 @@ use crate::state::zone_state::ZoneState;
 pub struct PlayerState {
     pub deck: ZoneState,
     pub hand: ZoneState,
+    pub clock: ZoneState,
 }
 
 impl PlayerState {
@@ -10,6 +11,7 @@ impl PlayerState {
         Self {
             deck: ZoneState::new(),
             hand: ZoneState::new(),
+            clock: ZoneState::new(),
         }
     }
 }
