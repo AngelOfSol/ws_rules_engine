@@ -10,8 +10,16 @@ pub struct GameState {
 
 impl GameState {
     pub fn new() -> Self {
+        let mut players = [PlayerState::new(), PlayerState::new()];
+
+        for id in 0..50 {
+            for player in 0..2 {
+                players[player].deck.put_on_top(id);
+            }
+        }
+
         Self {
-            players: [PlayerState::new(), PlayerState::new()],
+            players,
             active_player: 1,
             phase: Phase::Start,
             turn_number: 0,

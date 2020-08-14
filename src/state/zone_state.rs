@@ -10,4 +10,8 @@ impl ZoneState {
             content: Vec::new(),
         }
     }
+
+    pub fn put_on_top(&mut self, card: CardId) {
+        self.content.push(card);
+    }
 }
