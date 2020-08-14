@@ -1,0 +1,8 @@
+[] setup basic gamestate
+[] setup basic gamedata
+[] create start and end turns
+[] display start and end turn events
+[] create draw phase
+[] display draw event
+[] create clock phase
+[] ask player to clock or not

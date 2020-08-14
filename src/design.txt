@@ -20,6 +20,7 @@ Biggest block of execution is one player's turn (NOT one pair of turns)
 API will allow for standalone rules engine, or integrated rule engine
 Engine will not conduct IO directly, instead it will provide details of what information it needs
 Engine will stall while waiting for IO to be conducted
+Cards will include bits of code or bytecode to be executed as card effects
 
 
 Structure
@@ -68,5 +69,9 @@ struct CardAbilities {
 struct CardStats {
     power: i32,
     level: i32,
+    ...
+}
+
+trait EngineInterface {
     ...
 }
