@@ -14,7 +14,7 @@ High-level Non-goals:
 - Ultra high performance 
 - Render the game
 - Handle card games other than Weiss Schwarz
-- Provide turing-complete coding language
+- Provide turing-complete language for execution cards
 
 Design:
 

@@ -1,7 +1,7 @@
-[] setup basic gamestate
-[] setup basic gamedata
-[] create start and end turns
-[] display start and end turn events
+[x] setup basic gamestate
+[x] setup basic gamedata
+[x] create start and end turns
+[x] display start and end turn events
 [] create draw phase
 [] display draw event
 [] create clock phase
