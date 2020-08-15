@@ -9,6 +9,30 @@ use ws_engine::rules::{
 #[derive(Debug)]
 struct BasicIO;
 
+impl BasicIO {
+    fn get_message(
+        options: &[CardId],
+        choosing_player: usize,
+        context: ChoiceContext,
+        optional: bool,
+    ) -> String {
+        match context {
+            ChoiceContext::ClockPhaseCardToClock => format!(
+                "player {} {} choose to clock from: {:?}",
+                choosing_player,
+                if optional { "may" } else { "must" },
+                options
+            ),
+            ChoiceContext::HandLimitDiscard => format!(
+                "player {} {} choose to discard one from: {:?}",
+                choosing_player,
+                if optional { "may" } else { "must" },
+                options
+            ),
+        }
+    }
+}
+
 impl IO for BasicIO {
     fn phase_change(&mut self, phase: Phase, turn_player: usize) {
         println!("Phase Changed: {:?} for player {}", phase, turn_player);
@@ -18,26 +42,25 @@ impl IO for BasicIO {
         println!("player {} drew a card ({})", turn_player, card);
     }
 
+    fn discard(&mut self, card: CardId, turn_player: usize) {
+        println!("player {} discarded a card ({})", turn_player, card);
+    }
+
     fn clock(&mut self, card: CardId, turn_player: usize) {
         println!("player {} clocked card {}", turn_player, card);
     }
 
-    fn ask_card_choice(
+    fn ask_card_optional_choice(
         &mut self,
         options: &[CardId],
         choosing_player: usize,
         context: ChoiceContext,
     ) -> Option<usize> {
+        println!(
+            "{}",
+            BasicIO::get_message(options, choosing_player, context, true)
+        );
         let mut choice_buffer = String::new();
-
-        match context {
-            ChoiceContext::ClockPhaseCardToClock => {
-                println!(
-                    "player {} may choose to clock from: {:?}",
-                    choosing_player, options
-                );
-            }
-        }
 
         let _ = stdout().flush();
         let _ = stdin().read_line(&mut choice_buffer);
@@ -50,6 +73,32 @@ impl IO for BasicIO {
             let id = usize::from_str(&choice_buffer).ok()?.into();
             options.iter().position(|item| *item == id)
         }
+    }
+
+    fn ask_card_required_choice(
+        &mut self,
+        options: &[CardId],
+        choosing_player: usize,
+        context: ChoiceContext,
+    ) -> usize {
+        println!(
+            "{}",
+            BasicIO::get_message(options, choosing_player, context, false)
+        );
+        let mut choice_buffer = String::new();
+
+        let _ = stdout().flush();
+        let _ = stdin().read_line(&mut choice_buffer);
+
+        let mut choice = choice_buffer.trim();
+
+        while usize::from_str(&choice).is_err() {
+            let _ = stdout().flush();
+            let _ = stdin().read_line(&mut choice_buffer);
+            choice = choice_buffer.trim();
+        }
+        let id = usize::from_str(&choice).unwrap().into();
+        options.iter().position(|item| *item == id).unwrap()
     }
 }
 

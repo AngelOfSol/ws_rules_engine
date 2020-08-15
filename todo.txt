@@ -20,8 +20,15 @@
 [x] move clock_action to seperate function so it's more testable
 [x] pass the drawn CardID to the io function
 [x] change api to take index into options list, rather than taking card_id
-[] add choice context
-[] implement hand limit at end of turn
+[x] add choice context
+[x] implement hand limit at end of turn
+    [x] add the hand limit to each player
+    [x] modify the end phase to check if they're over the hand limit
+    [x] ask the user, what cards to discard over the handlimit
+    [x] put those cards into the waiting room
+        [x] make waiting room
+        [x] take cards out of hand
+        [x] put them on top of waiting room
 [] handle leveling
     [] create interrupt processing for leveling
     [] ask choice to choose what card to level

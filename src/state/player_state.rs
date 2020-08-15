@@ -4,24 +4,59 @@ use crate::state::zone_state::ZoneState;
 pub struct PlayerState {
     pub deck: ZoneState,
     pub hand: ZoneState,
+    pub waiting_room: ZoneState,
     pub clock: ZoneState,
+    base_hand_limit: usize,
 }
 
 #[derive(Debug)]
 pub struct DeckEmpty;
 
+#[derive(Debug)]
+pub enum DiscardError {
+    EmptyHand,
+    InvalidCard,
+}
+
 impl PlayerState {
     pub fn new() -> Self {
-        Self {
-            deck: ZoneState::new(),
-            hand: ZoneState::new(),
-            clock: ZoneState::new(),
-        }
+        Self::default()
     }
     pub fn draw_card(&mut self) -> Result<CardId, DeckEmpty> {
         let card = self.deck.take_top().ok_or(DeckEmpty)?;
         self.hand.put_on_top(card);
         Ok(card)
+    }
+
+    pub fn discard_card(&mut self, card: CardId) -> Result<(), DiscardError> {
+        if self.hand.content.is_empty() {
+            return Err(DiscardError::EmptyHand);
+        }
+
+        let card = self
+            .hand
+            .take_card_id(card)
+            .ok_or(DiscardError::InvalidCard)?;
+
+        self.waiting_room.put_on_top(card);
+
+        Ok(())
+    }
+
+    pub fn check_handlimit(&self) -> bool {
+        self.hand.content.len() > self.base_hand_limit
+    }
+}
+
+impl Default for PlayerState {
+    fn default() -> Self {
+        Self {
+            deck: ZoneState::new(),
+            hand: ZoneState::new(),
+            waiting_room: ZoneState::new(),
+            clock: ZoneState::new(),
+            base_hand_limit: 7,
+        }
     }
 }
 
@@ -34,8 +69,7 @@ mod tests {
     fn draw_card() {
         let mut player = PlayerState {
             deck: ZoneState::with_content(vec![0.into()]),
-            hand: ZoneState::new(),
-            clock: ZoneState::new(),
+            ..Default::default()
         };
 
         let starting_hand_size = player.hand.content.len();
@@ -49,9 +83,7 @@ mod tests {
     #[test]
     fn draw_card_empty_deck() {
         let mut player = PlayerState {
-            deck: ZoneState::new(),
-            hand: ZoneState::new(),
-            clock: ZoneState::new(),
+            ..Default::default()
         };
 
         let starting_hand_size = player.hand.content.len();

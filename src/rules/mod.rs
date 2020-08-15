@@ -48,7 +48,7 @@ impl Rules {
 
     fn clock_phase<T: IO>(&mut self, io: &mut T) {
         self.phase_change(io, Phase::Clock);
-        let card = io.ask_card_choice(
+        let card = io.ask_card_optional_choice(
             &self.current_player().hand.content,
             self.state.active_player,
             ChoiceContext::ClockPhaseCardToClock,
@@ -86,7 +86,25 @@ impl Rules {
 
     fn end_phase<T: IO>(&mut self, io: &mut T) {
         self.phase_change(io, Phase::End);
+
+        self.check_handlimit(io);
+        //
+
         self.switch_turns();
+    }
+
+    fn check_handlimit<T: IO>(&mut self, io: &mut T) {
+        while self.current_player().check_handlimit() {
+            let to_discard = io.ask_card_required_choice(
+                &self.current_player().hand.content,
+                self.state.active_player,
+                ChoiceContext::HandLimitDiscard,
+            );
+            let to_discard = self.current_player().hand.content[to_discard];
+
+            self.current_player_mut().discard_card(to_discard).unwrap();
+            io.discard(to_discard, self.state.active_player);
+        }
     }
 
     fn switch_turns(&mut self) {
