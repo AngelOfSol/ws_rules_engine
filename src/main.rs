@@ -7,19 +7,19 @@ use ws_engine::rules::{io::IO, Rules};
 struct BasicIO;
 
 impl IO for BasicIO {
-    fn phase_change(&self, phase: Phase, turn_player: usize) {
+    fn phase_change(&mut self, phase: Phase, turn_player: usize) {
         println!("Phase Changed: {:?} for player {}", phase, turn_player);
     }
 
-    fn draw(&self, turn_player: usize) {
+    fn draw(&mut self, turn_player: usize) {
         println!("player {} drew a card", turn_player);
     }
 
-    fn clock(&self, card: CardId, turn_player: usize) {
+    fn clock(&mut self, card: CardId, turn_player: usize) {
         println!("player {} clocked card {}", turn_player, card);
     }
 
-    fn ask_choice(&self, options: &Vec<CardId>, choosing_player: usize) -> Option<CardId> {
+    fn ask_choice(&mut self, options: &Vec<CardId>, choosing_player: usize) -> Option<CardId> {
         let mut choice_buffer = String::new();
 
         println!(
@@ -46,10 +46,11 @@ impl IO for BasicIO {
 }
 
 fn main() {
-    let mut engine = Rules::new(BasicIO);
+    let mut io = BasicIO;
+    let mut engine = Rules::new();
 
     for _ in 0..10 {
-        engine.run_turn();
+        engine.run_turn(&mut io);
 
         println!("{:?}", engine);
     }

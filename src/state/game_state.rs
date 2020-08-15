@@ -5,7 +5,7 @@ pub struct GameState {
     pub players: [PlayerState; 2],
     pub active_player: usize,
     pub phase: Phase,
-    pub turn_number: usize,
+    pub turn: usize,
 }
 
 impl GameState {
@@ -20,9 +20,9 @@ impl GameState {
 
         Self {
             players,
-            active_player: 1,
+            active_player: 0,
             phase: Phase::Start,
-            turn_number: 0,
+            turn: 0,
         }
     }
 }

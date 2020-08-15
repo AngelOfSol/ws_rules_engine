@@ -15,6 +15,7 @@
     [x] log clocked card
     [x] draw 2 cards
 [] change api to take index into options list, rather than taking card_id
+[] add choice context
 [] implement hand limit at end of turn
 [] handle leveling
     [] create interrupt processing for leveling
@@ -31,4 +32,7 @@
     [] implement loss checking
         [] level 4
         [] empty waiting room, empty library
-[] 
+
+Maybes:
+
+[] move to taking io in by hand rather than being a feature of the rules engine
