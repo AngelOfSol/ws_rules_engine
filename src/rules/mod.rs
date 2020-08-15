@@ -55,10 +55,9 @@ impl<T: IO> Rules<T> {
 
     fn clock_phase(&mut self) {
         self.phase_change(Phase::Clock);
-        let card = self.io.ask_choice(
-            self.current_player().hand.content(),
-            self.state.active_player,
-        );
+        let card = self
+            .io
+            .ask_choice(self.current_player().hand.content, self.state.active_player);
 
         if card.is_some() {
             let card = card.unwrap();

@@ -1,7 +1,7 @@
 use crate::data::CardId;
 #[derive(Debug)]
 pub struct ZoneState {
-    content: Vec<CardId>,
+    pub content: Vec<CardId>,
 }
 
 impl ZoneState {
@@ -12,10 +12,6 @@ impl ZoneState {
     }
     pub fn with_content(content: Vec<CardId>) -> Self {
         Self { content }
-    }
-
-    pub fn content(&self) -> &Vec<CardId> {
-        &self.content
     }
 
     pub fn put_on_top(&mut self, card: CardId) {
