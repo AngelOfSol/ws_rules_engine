@@ -1,4 +1,4 @@
-use crate::state::phase::Phase;
+use crate::data::Phase;
 use crate::state::player_state::PlayerState;
 #[derive(Debug)]
 pub struct GameState {

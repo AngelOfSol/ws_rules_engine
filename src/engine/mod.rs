@@ -1,8 +1,8 @@
 pub mod io;
 
 use crate::data::game_data::GameData;
+use crate::data::Phase;
 use crate::state::game_state::GameState;
-use crate::state::phase::Phase;
 use crate::state::player_state::PlayerState;
 use io::IO;
 #[derive(Debug)]

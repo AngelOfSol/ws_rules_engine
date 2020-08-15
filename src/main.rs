@@ -1,8 +1,7 @@
 use std::io::*;
 use std::str::FromStr;
-use ws_engine::data::CardId;
+use ws_engine::data::{CardId, Phase};
 use ws_engine::engine::{io::IO, Engine};
-use ws_engine::state::phase::Phase;
 
 #[derive(Debug)]
 struct BasicIO;

@@ -1,5 +1,4 @@
-use crate::data::CardId;
-use crate::state::phase::Phase;
+use crate::data::{CardId, Phase};
 pub trait IO {
     fn phase_change(&self, phase: Phase, turn_player: usize);
     fn draw(&self, turn_player: usize);
