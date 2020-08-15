@@ -203,7 +203,7 @@ mod tests {
 
         let mut rules = Rules::new();
 
-        rules.draw_phase(&mut io);
+        rules.current_player_mut().draw_card().unwrap();
 
         let starting_hand_size = rules.current_player().hand.content.len();
         let starting_clock_size = rules.current_player().clock.content.len();
