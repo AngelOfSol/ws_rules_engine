@@ -1,8 +1,4 @@
-mod data;
-mod engine;
-mod state;
-
-use engine::Engine;
+use ws_engine::engine::Engine;
 
 fn main() {
     let mut engine = Engine::new(());
