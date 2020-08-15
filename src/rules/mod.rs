@@ -87,22 +87,23 @@ impl Rules {
     fn end_phase<T: IO>(&mut self, io: &mut T) {
         self.phase_change(io, Phase::End);
 
-        self.check_handlimit(io);
+        self.check_handlimit(io, self.state.active_player);
         //
 
         self.switch_turns();
     }
 
-    fn check_handlimit<T: IO>(&mut self, io: &mut T) {
-        while self.current_player().check_handlimit() {
+    fn check_handlimit<T: IO>(&mut self, io: &mut T, player: usize) {
+        let player_state = &mut self.state.players[player];
+        while player_state.exceeding_handlimit() {
             let to_discard = io.ask_card_required_choice(
-                &self.current_player().hand.content,
+                &player_state.hand.content,
                 self.state.active_player,
                 ChoiceContext::HandLimitDiscard,
             );
-            let to_discard = self.current_player().hand.content[to_discard];
+            let to_discard = player_state.hand.content[to_discard];
 
-            self.current_player_mut().discard_card(to_discard).unwrap();
+            player_state.discard_card(to_discard).unwrap();
             io.discard(to_discard, self.state.active_player);
         }
     }
@@ -229,6 +230,26 @@ mod tests {
         assert_eq!(
             *rules.current_player().clock.content.last().unwrap(),
             clocked_card
+        );
+    }
+
+    #[test]
+    fn check_handlimit() {
+        let mut rules = Rules::new();
+
+        for _ in 0..10 {
+            rules.draw_card(&mut (), rules.state.active_player);
+        }
+        let starting_hand_size = rules.current_player().hand.content.len();
+        let starting_waiting_room_size = rules.current_player().waiting_room.content.len();
+
+        rules.check_handlimit(&mut (), rules.state.active_player);
+
+        assert!(!rules.current_player().exceeding_handlimit());
+        assert_eq!(
+            rules.current_player().waiting_room.content.len(),
+            starting_hand_size - rules.current_player().hand.content.len()
+                + starting_waiting_room_size
         );
     }
 }

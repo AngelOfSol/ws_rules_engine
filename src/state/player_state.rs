@@ -43,7 +43,7 @@ impl PlayerState {
         Ok(())
     }
 
-    pub fn check_handlimit(&self) -> bool {
+    pub fn exceeding_handlimit(&self) -> bool {
         self.hand.content.len() > self.base_hand_limit
     }
 }
