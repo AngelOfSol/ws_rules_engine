@@ -9,7 +9,7 @@ use io::IO;
 pub struct Engine<T> {
     state: GameState,
     data: GameData,
-    engine: T,
+    io: T,
 }
 
 impl<T: IO> Engine<T> {
@@ -17,7 +17,7 @@ impl<T: IO> Engine<T> {
         Engine {
             state: GameState::new(),
             data: GameData {},
-            engine: interface,
+            io: interface,
         }
     }
 
@@ -55,7 +55,7 @@ impl<T: IO> Engine<T> {
 
     fn clock_phase(&mut self) {
         self.phase_change(Phase::Clock);
-        let card = self.engine.ask_choice(
+        let card = self.io.ask_choice(
             self.current_player().hand.content(),
             self.state.active_player,
         );
@@ -65,7 +65,7 @@ impl<T: IO> Engine<T> {
             let player = self.current_player_mut();
             let card = player.hand.take_card_id(card).unwrap();
             player.clock.put_on_top(card);
-            self.engine.clock(card, self.state.active_player);
+            self.io.clock(card, self.state.active_player);
 
             self.draw_card(self.state.active_player);
             self.draw_card(self.state.active_player);
@@ -77,13 +77,13 @@ impl<T: IO> Engine<T> {
         let card = current_player.deck.take_top();
         if card.is_some() {
             current_player.hand.put_on_top(card.unwrap());
-            self.engine.draw(self.state.active_player);
+            self.io.draw(self.state.active_player);
         }
     }
 
     fn phase_change(&mut self, phase: Phase) {
         self.state.phase = phase;
-        self.engine.phase_change(phase, self.state.active_player);
+        self.io.phase_change(phase, self.state.active_player);
     }
 
     fn end_phase(&mut self) {
