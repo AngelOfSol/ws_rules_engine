@@ -56,7 +56,7 @@ impl<T: IO> Engine<T> {
     fn clock_phase(&mut self) {
         self.phase_change(Phase::Clock);
         let card = self.engine.ask_choice(
-            &self.current_player().hand.content,
+            self.current_player().hand.content(),
             self.state.active_player,
         );
 
