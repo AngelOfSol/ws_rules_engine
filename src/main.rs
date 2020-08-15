@@ -1,7 +1,7 @@
 use std::io::*;
 use std::str::FromStr;
 use ws_engine::data::{CardId, Phase};
-use ws_engine::engine::{io::IO, Engine};
+use ws_engine::rules::{io::IO, Rules};
 
 #[derive(Debug)]
 struct BasicIO;
@@ -46,7 +46,7 @@ impl IO for BasicIO {
 }
 
 fn main() {
-    let mut engine = Engine::new(BasicIO);
+    let mut engine = Rules::new(BasicIO);
 
     for _ in 0..10 {
         engine.run_turn();

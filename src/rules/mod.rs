@@ -6,15 +6,15 @@ use crate::state::game_state::GameState;
 use crate::state::player_state::PlayerState;
 use io::IO;
 #[derive(Debug)]
-pub struct Engine<T> {
+pub struct Rules<T> {
     state: GameState,
     data: GameData,
     io: T,
 }
 
-impl<T: IO> Engine<T> {
+impl<T: IO> Rules<T> {
     pub fn new(interface: T) -> Self {
-        Engine {
+        Rules {
             state: GameState::new(),
             data: GameData {},
             io: interface,
