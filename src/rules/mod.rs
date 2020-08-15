@@ -65,6 +65,8 @@ impl Rules {
         let player = &mut self.state.players[player];
         let card = player.hand.take_card_id(card).unwrap();
         player.clock.put_on_top(card);
+        self.interrupt_type_rules_processing(io);
+
         io.clock(card, self.state.active_player);
 
         self.draw_card(io, self.state.active_player);
@@ -115,6 +117,40 @@ impl Rules {
             self.state.active_player = 0;
             self.state.turn += 1;
         }
+    }
+
+    fn interrupt_type_rules_processing<T: IO>(&mut self, io: &mut T) {
+        loop {
+            let mut done = true;
+
+            for player in [self.state.active_player(), self.state.non_active_player()].iter() {
+                if self.state.players[*player].needs_to_level() {
+                    done = false;
+                    self.level_player(io, *player);
+                    //
+                }
+            }
+
+            if done {
+                return;
+            }
+        }
+        // check what interrupts to process
+        // get a list of who and what interrupts exist
+        // process them in the correct order
+        // if we did no processes, we return
+        // if we did any processes, we go again
+    }
+
+    fn level_player<T: IO>(&mut self, io: &mut T, player: usize) {
+        let player_state = &mut self.state.players[player];
+        let bottom_clock = &player_state.clock.content[0..7];
+        let card_idx =
+            io.ask_card_required_choice(bottom_clock, player, ChoiceContext::LevelUpProcess);
+        let card = bottom_clock[card_idx];
+
+        let result = player_state.level_up_with(card).unwrap();
+        io.level_up(result, player);
     }
 }
 
@@ -251,5 +287,27 @@ mod tests {
             starting_hand_size - rules.current_player().hand.content.len()
                 + starting_waiting_room_size
         );
+    }
+
+    #[test]
+    fn check_leveling_up() {
+        let mut rules = Rules::new();
+
+        for i in 0..14 {
+            rules.current_player_mut().clock.put_on_top(i.into());
+        }
+
+        let starting_level = rules.current_player().level.content.len();
+        let starting_waiting_room_size = rules.current_player().waiting_room.content.len();
+        rules.interrupt_type_rules_processing(&mut ());
+
+        assert_eq!(
+            rules.current_player().level.content.len(),
+            starting_level + 2
+        );
+        assert_eq!(
+            rules.current_player().waiting_room.content.len(),
+            starting_waiting_room_size + 6 * 2
+        )
     }
 }

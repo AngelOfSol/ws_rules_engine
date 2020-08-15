@@ -3,7 +3,7 @@ mod phase;
 
 pub use phase::Phase;
 #[derive(Debug, Copy, Clone, Ord, PartialOrd, Eq, PartialEq)]
-pub struct CardId(usize);
+pub struct CardId(pub usize);
 
 impl Into<CardId> for usize {
     fn into(self) -> CardId {

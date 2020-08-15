@@ -25,4 +25,15 @@ impl GameState {
             turn: 0,
         }
     }
+
+    pub fn active_player(&self) -> usize {
+        self.active_player
+    }
+    pub fn non_active_player(&self) -> usize {
+        match self.active_player {
+            0 => 1,
+            1 => 0,
+            _ => unreachable!(),
+        }
+    }
 }

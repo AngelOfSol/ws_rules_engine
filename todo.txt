@@ -30,10 +30,13 @@
         [x] take cards out of hand
         [x] put them on top of waiting room
 [] handle leveling
-    [] create interrupt processing for leveling
-    [] ask choice to choose what card to level
-    [] move card to level zone
-    [] log leveling event
+    [x] create level zone
+    [x] create interrupt processing for leveling
+    [x] ask choice to choose what card to level
+    [x] move 1 card to top of level zone
+    [x] move 6 cards to the bottom of the level zone
+    [x] move card to level zone
+    [x] log leveling event
 [] handle refreshing
     [] create interrupt processing for refreshing
     [] make sure that player gets to choose between refresh and level, when they both happen at the same time

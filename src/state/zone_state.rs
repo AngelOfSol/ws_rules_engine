@@ -21,6 +21,13 @@ impl ZoneState {
     pub fn take_top(&mut self) -> Option<CardId> {
         self.content.pop()
     }
+    pub fn take_bottom(&mut self) -> Option<CardId> {
+        if self.content.is_empty() {
+            None
+        } else {
+            Some(self.content.remove(0))
+        }
+    }
 
     pub fn take_card_id(&mut self, id: CardId) -> Option<CardId> {
         Some(

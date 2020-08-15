@@ -5,6 +5,7 @@ use ws_engine::rules::{
     io::{ChoiceContext, IO},
     Rules,
 };
+use ws_engine::state::player_state::LevelUpResult;
 
 #[derive(Debug)]
 struct BasicIO;
@@ -29,6 +30,12 @@ impl BasicIO {
                 if optional { "may" } else { "must" },
                 options
             ),
+            ChoiceContext::LevelUpProcess => format!(
+                "player {} {} choose from clock to level up with: {:?}",
+                choosing_player,
+                if optional { "may" } else { "must" },
+                options
+            ),
         }
     }
 }
@@ -44,6 +51,10 @@ impl IO for BasicIO {
 
     fn discard(&mut self, card: CardId, turn_player: usize) {
         println!("player {} discarded a card ({})", turn_player, card);
+    }
+
+    fn level_up(&mut self, result: LevelUpResult, turn_player: usize) {
+        println!("player {} leveled up with {:?}", turn_player, result);
     }
 
     fn clock(&mut self, card: CardId, turn_player: usize) {
@@ -106,7 +117,7 @@ fn main() {
     let mut io = BasicIO;
     let mut engine = Rules::new();
 
-    for _ in 0..10 {
+    for _ in 0..50 {
         engine.run_turn(&mut io);
 
         println!("{:?}", engine);
