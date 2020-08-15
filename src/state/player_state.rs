@@ -1,3 +1,4 @@
+use crate::data::CardId;
 use crate::state::zone_state::ZoneState;
 #[derive(Debug)]
 pub struct PlayerState {
@@ -17,10 +18,10 @@ impl PlayerState {
             clock: ZoneState::new(),
         }
     }
-    pub fn draw_card(&mut self) -> Result<(), DeckEmpty> {
+    pub fn draw_card(&mut self) -> Result<CardId, DeckEmpty> {
         let card = self.deck.take_top().ok_or(DeckEmpty)?;
         self.hand.put_on_top(card);
-        Ok(())
+        Ok(card)
     }
 }
 
@@ -32,7 +33,7 @@ mod tests {
     #[test]
     fn draw_card() {
         let mut player = PlayerState {
-            deck: ZoneState::with_content(vec![0]),
+            deck: ZoneState::with_content(vec![0.into()]),
             hand: ZoneState::new(),
             clock: ZoneState::new(),
         };

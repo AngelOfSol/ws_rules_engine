@@ -14,7 +14,7 @@ impl GameState {
 
         for id in 0..50 {
             for player in players.iter_mut() {
-                player.deck.put_on_top(id);
+                player.deck.put_on_top(id.into());
             }
         }
 

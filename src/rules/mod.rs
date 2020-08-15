@@ -4,7 +4,7 @@ use crate::data::game_data::GameData;
 use crate::data::{CardId, Phase};
 use crate::state::game_state::GameState;
 use crate::state::player_state::PlayerState;
-use io::IO;
+use io::{ChoiceContext, IO};
 #[derive(Debug)]
 pub struct Rules {
     state: GameState,
@@ -48,12 +48,14 @@ impl Rules {
 
     fn clock_phase<T: IO>(&mut self, io: &mut T) {
         self.phase_change(io, Phase::Clock);
-        let card = io.ask_choice(
+        let card = io.ask_card_choice(
             &self.current_player().hand.content,
             self.state.active_player,
+            ChoiceContext::ClockPhaseCardToClock,
         );
 
         if let Some(card) = card {
+            let card = self.current_player().hand.content[card];
             self.clock_card(io, card, self.state.active_player);
         }
     }
@@ -71,10 +73,10 @@ impl Rules {
 
     fn draw_card<T: IO>(&mut self, io: &mut T, player: usize) {
         let player_state = &mut self.state.players[player];
-        player_state
+        let card = player_state
             .draw_card()
             .expect("can't draw a card on an empty deck");
-        io.draw(player);
+        io.draw(card, player);
     }
 
     fn phase_change<T: IO>(&mut self, io: &mut T, phase: Phase) {

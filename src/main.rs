@@ -1,7 +1,10 @@
 use std::io::*;
 use std::str::FromStr;
 use ws_engine::data::{CardId, Phase};
-use ws_engine::rules::{io::IO, Rules};
+use ws_engine::rules::{
+    io::{ChoiceContext, IO},
+    Rules,
+};
 
 #[derive(Debug)]
 struct BasicIO;
@@ -11,21 +14,30 @@ impl IO for BasicIO {
         println!("Phase Changed: {:?} for player {}", phase, turn_player);
     }
 
-    fn draw(&mut self, turn_player: usize) {
-        println!("player {} drew a card", turn_player);
+    fn draw(&mut self, card: CardId, turn_player: usize) {
+        println!("player {} drew a card ({})", turn_player, card);
     }
 
     fn clock(&mut self, card: CardId, turn_player: usize) {
         println!("player {} clocked card {}", turn_player, card);
     }
 
-    fn ask_choice(&mut self, options: &[CardId], choosing_player: usize) -> Option<CardId> {
+    fn ask_card_choice(
+        &mut self,
+        options: &[CardId],
+        choosing_player: usize,
+        context: ChoiceContext,
+    ) -> Option<usize> {
         let mut choice_buffer = String::new();
 
-        println!(
-            "player {} may choose to clock from: {:?}",
-            choosing_player, options
-        );
+        match context {
+            ChoiceContext::ClockPhaseCardToClock => {
+                println!(
+                    "player {} may choose to clock from: {:?}",
+                    choosing_player, options
+                );
+            }
+        }
 
         let _ = stdout().flush();
         let _ = stdin().read_line(&mut choice_buffer);
@@ -35,12 +47,8 @@ impl IO for BasicIO {
         if choice_buffer == "" {
             None
         } else {
-            let id = CardId::from_str(&choice_buffer).ok()?;
-            if options.contains(&id) {
-                Some(id)
-            } else {
-                None
-            }
+            let id = usize::from_str(&choice_buffer).ok()?.into();
+            options.iter().position(|item| *item == id)
         }
     }
 }
