@@ -13,8 +13,8 @@ impl GameState {
         let mut players = [PlayerState::new(), PlayerState::new()];
 
         for id in 0..50 {
-            for player in 0..2 {
-                players[player].deck.put_on_top(id);
+            for player in players.iter_mut() {
+                player.deck.put_on_top(id);
             }
         }
 

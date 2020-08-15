@@ -19,7 +19,7 @@ impl IO for BasicIO {
         println!("player {} clocked card {}", turn_player, card);
     }
 
-    fn ask_choice(&mut self, options: &Vec<CardId>, choosing_player: usize) -> Option<CardId> {
+    fn ask_choice(&mut self, options: &[CardId], choosing_player: usize) -> Option<CardId> {
         let mut choice_buffer = String::new();
 
         println!(

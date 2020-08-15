@@ -5,7 +5,7 @@ pub trait IO {
 
     fn clock(&mut self, card: CardId, player: usize);
 
-    fn ask_choice(&mut self, options: &Vec<CardId>, player: usize) -> Option<CardId>;
+    fn ask_choice(&mut self, options: &[CardId], player: usize) -> Option<CardId>;
 }
 
 impl IO for () {
@@ -14,7 +14,7 @@ impl IO for () {
 
     fn clock(&mut self, _: CardId, _: usize) {}
 
-    fn ask_choice(&mut self, _: &Vec<CardId>, _: usize) -> Option<CardId> {
+    fn ask_choice(&mut self, _: &[CardId], _: usize) -> Option<CardId> {
         None
     }
 }

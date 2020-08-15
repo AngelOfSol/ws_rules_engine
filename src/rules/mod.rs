@@ -52,8 +52,7 @@ impl Rules {
             self.state.active_player,
         );
 
-        if card.is_some() {
-            let card = card.unwrap();
+        if let Some(card) = card {
             let player = self.current_player_mut();
             let card = player.hand.take_card_id(card).unwrap();
             player.clock.put_on_top(card);
@@ -193,7 +192,7 @@ mod tests {
 
             fn clock(&mut self, _: CardId, _: usize) {}
 
-            fn ask_choice(&mut self, data: &Vec<CardId>, _: usize) -> Option<CardId> {
+            fn ask_choice(&mut self, data: &[CardId], _: usize) -> Option<CardId> {
                 self.clocked_card = Some(data[0]);
                 self.clocked_card
             }
