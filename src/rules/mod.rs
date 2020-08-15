@@ -98,19 +98,6 @@ mod tests {
     use crate::data::{CardId, Phase};
     use io::IO;
 
-    struct TestIO;
-
-    impl IO for TestIO {
-        fn phase_change(&mut self, _: Phase, _: usize) {}
-        fn draw(&mut self, _: usize) {}
-
-        fn clock(&mut self, _: CardId, _: usize) {}
-
-        fn ask_choice(&mut self, _: &Vec<CardId>, _: usize) -> Option<CardId> {
-            None
-        }
-    }
-
     #[test]
     fn switch_turns() {
         let mut rules = Rules::new();
@@ -136,23 +123,22 @@ mod tests {
 
     #[test]
     fn end_phase() {
-        let mut io = TestIO;
         let mut rules = Rules::new();
 
         assert_eq!(rules.state.active_player, 0);
         assert_eq!(rules.state.turn, 0);
 
-        rules.end_phase(&mut io);
+        rules.end_phase(&mut ());
 
         assert_eq!(rules.state.active_player, 1);
         assert_eq!(rules.state.turn, 0);
 
-        rules.end_phase(&mut io);
+        rules.end_phase(&mut ());
 
         assert_eq!(rules.state.active_player, 0);
         assert_eq!(rules.state.turn, 1);
 
-        rules.end_phase(&mut io);
+        rules.end_phase(&mut ());
 
         assert_eq!(rules.state.active_player, 1);
         assert_eq!(rules.state.turn, 1);
@@ -160,13 +146,12 @@ mod tests {
 
     #[test]
     fn draw_phase() {
-        let mut io = TestIO;
         let mut rules = Rules::new();
 
         let starting_hand_size = rules.current_player().hand.content.len();
         let starting_deck_size = rules.current_player().deck.content.len();
 
-        rules.draw_phase(&mut io);
+        rules.draw_phase(&mut ());
 
         assert_eq!(
             rules.current_player().hand.content.len(),
@@ -180,13 +165,12 @@ mod tests {
 
     #[test]
     fn clock_phase_no_clock() {
-        let mut io = TestIO;
         let mut rules = Rules::new();
 
         let starting_hand_size = rules.current_player().hand.content.len();
         let starting_deck_size = rules.current_player().deck.content.len();
 
-        rules.clock_phase(&mut io);
+        rules.clock_phase(&mut ());
 
         assert_eq!(
             rules.current_player().hand.content.len(),

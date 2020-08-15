@@ -7,3 +7,14 @@ pub trait IO {
 
     fn ask_choice(&mut self, options: &Vec<CardId>, player: usize) -> Option<CardId>;
 }
+
+impl IO for () {
+    fn phase_change(&mut self, _: Phase, _: usize) {}
+    fn draw(&mut self, _: usize) {}
+
+    fn clock(&mut self, _: CardId, _: usize) {}
+
+    fn ask_choice(&mut self, _: &Vec<CardId>, _: usize) -> Option<CardId> {
+        None
+    }
+}
