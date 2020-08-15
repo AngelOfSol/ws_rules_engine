@@ -15,6 +15,8 @@
     [x] log clocked card
     [x] draw 2 cards
 [] change api to take index into options list, rather than taking card_id
+[] move clock_action to seperate function so it's more testable
+[] start adding integration tests
 [] add choice context
 [] implement hand limit at end of turn
 [] handle leveling
