@@ -14,4 +14,16 @@
     [x] move chosen card top of the clock
     [x] log clocked card
     [x] draw 2 cards
-[x] ask player to clock or not
+[] change api to take index into options list, rather than taking card_id
+[] implement hand limit at end of turn
+[] handle leveling
+    [] create interrupt processing for leveling
+    [] ask choice to choose what card to level
+    [] move card to level zone
+    [] log leveling event
+[] handle refreshing
+    [] create interrupt processing for refreshing
+    [] make sure that player gets to choose between refresh and level, when they both happen at the same time
+    [] move waiting room to deck
+    [] add a point to the refresh point
+    [] handle the refresh point at the correct timing
