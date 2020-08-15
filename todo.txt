@@ -14,9 +14,10 @@
     [x] move chosen card top of the clock
     [x] log clocked card
     [x] draw 2 cards
-[] change api to take index into options list, rather than taking card_id
+[] move state changing functions to the PlayerState, so we can unit test them and leave the rules engine to handling IO
 [] move clock_action to seperate function so it's more testable
 [] start adding integration tests
+[] change api to take index into options list, rather than taking card_id
 [] add choice context
 [] implement hand limit at end of turn
 [] handle leveling
