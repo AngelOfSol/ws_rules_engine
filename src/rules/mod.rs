@@ -66,11 +66,10 @@ impl Rules {
 
     fn draw_card<T: IO>(&mut self, io: &mut T, player: usize) {
         let player_state = &mut self.state.players[player];
-        let card = player_state.deck.take_top();
-        if card.is_some() {
-            player_state.hand.put_on_top(card.unwrap());
-            io.draw(player);
-        }
+        player_state
+            .draw_card()
+            .expect("can't draw a card on an empty deck");
+        io.draw(player);
     }
 
     fn phase_change<T: IO>(&mut self, io: &mut T, phase: Phase) {
@@ -157,26 +156,6 @@ mod tests {
 
         assert_eq!(rules.state.active_player, 1);
         assert_eq!(rules.state.turn, 1);
-    }
-
-    #[test]
-    fn draw_card() {
-        let mut io = TestIO;
-        let mut rules = Rules::new();
-
-        let starting_hand_size = rules.current_player().hand.content.len();
-        let starting_deck_size = rules.current_player().deck.content.len();
-
-        rules.draw_card(&mut io, rules.state.active_player);
-
-        assert_eq!(
-            rules.current_player().hand.content.len(),
-            starting_hand_size + 1
-        );
-        assert_eq!(
-            rules.current_player().deck.content.len(),
-            starting_deck_size - 1
-        );
     }
 
     #[test]
