@@ -10,6 +10,7 @@ High-level Goals:
 High-level Maybes:
 - Allow arbitrary pausing of game state to be resumed later from a raw data
 - Cycle analysis to prevent infinite loops
+- Provide support for arbitrary replacement events
 High-level Non-goals:
 - Ultra high performance 
 - Render the game
@@ -23,6 +24,7 @@ API will allow for standalone rules engine, or integrated rule engine
 Engine will not conduct IO directly, instead it will provide details of what information it needs
 Engine will stall while waiting for IO to be conducted
 Cards will include bits of code or bytecode to be executed as card effects
+Internally, engine will provide the ability to trigger events and have card effects respond to them
 
 Structure
 

@@ -1,7 +1,7 @@
 pub mod io;
 
 use crate::data::game_data::GameData;
-use crate::data::Phase;
+use crate::data::{CardId, Phase};
 use crate::state::game_state::GameState;
 use crate::state::player_state::PlayerState;
 use io::IO;
@@ -32,6 +32,7 @@ impl Rules {
         &self.state.players[self.state.active_player]
     }
 
+    #[allow(dead_code)]
     fn current_player_mut(&mut self) -> &mut PlayerState {
         &mut self.state.players[self.state.active_player]
     }
@@ -53,14 +54,19 @@ impl Rules {
         );
 
         if let Some(card) = card {
-            let player = self.current_player_mut();
-            let card = player.hand.take_card_id(card).unwrap();
-            player.clock.put_on_top(card);
-            io.clock(card, self.state.active_player);
-
-            self.draw_card(io, self.state.active_player);
-            self.draw_card(io, self.state.active_player);
+            self.clock_card(io, card, self.state.active_player);
         }
+    }
+
+    // precondition: card exists in player's hand
+    fn clock_card<T: IO>(&mut self, io: &mut T, card: CardId, player: usize) {
+        let player = &mut self.state.players[player];
+        let card = player.hand.take_card_id(card).unwrap();
+        player.clock.put_on_top(card);
+        io.clock(card, self.state.active_player);
+
+        self.draw_card(io, self.state.active_player);
+        self.draw_card(io, self.state.active_player);
     }
 
     fn draw_card<T: IO>(&mut self, io: &mut T, player: usize) {
@@ -94,8 +100,6 @@ impl Rules {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::data::{CardId, Phase};
-    use io::IO;
 
     #[test]
     fn switch_turns() {
@@ -180,34 +184,18 @@ mod tests {
             starting_deck_size
         );
     }
+
     #[test]
-    fn clock_phase_clock() {
-        struct ClockTestIO {
-            clocked_card: Option<CardId>,
-        };
-
-        impl IO for ClockTestIO {
-            fn phase_change(&mut self, _: Phase, _: usize) {}
-            fn draw(&mut self, _: usize) {}
-
-            fn clock(&mut self, _: CardId, _: usize) {}
-
-            fn ask_choice(&mut self, data: &[CardId], _: usize) -> Option<CardId> {
-                self.clocked_card = Some(data[0]);
-                self.clocked_card
-            }
-        }
-
-        let mut io = ClockTestIO { clocked_card: None };
-
+    fn clock_card() {
         let mut rules = Rules::new();
 
         rules.current_player_mut().draw_card().unwrap();
 
         let starting_hand_size = rules.current_player().hand.content.len();
         let starting_clock_size = rules.current_player().clock.content.len();
+        let clocked_card = rules.current_player().hand.content[0];
 
-        rules.clock_phase(&mut io);
+        rules.clock_card(&mut (), clocked_card, rules.state.active_player);
 
         // plus 2 cards - 1
         assert_eq!(
@@ -220,7 +208,7 @@ mod tests {
         );
         assert_eq!(
             *rules.current_player().clock.content.last().unwrap(),
-            io.clocked_card.unwrap()
+            clocked_card
         );
     }
 }
