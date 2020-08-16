@@ -77,7 +77,8 @@ impl PlayerState {
             return Err(LevelUpError::InvalidCard);
         }
         let bottom_clock: Vec<_> = bottom_clock
-            .drain_filter(|card| *card != level_up_card)
+            .drain(..)
+            .filter(|card| *card != level_up_card)
             .collect();
 
         for card in bottom_clock.iter() {
