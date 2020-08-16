@@ -1,6 +1,6 @@
 #[derive(Debug, PartialEq, Copy, Clone)]
 pub enum Phase {
-    Start,
+    Stand,
     End,
     Draw,
     Clock,

@@ -20,7 +20,7 @@ impl Rules {
     }
 
     pub fn run_turn<T: IO>(&mut self, io: &mut T) {
-        self.start_phase(io);
+        self.stand_phase(io);
 
         self.draw_phase(io);
 
@@ -37,8 +37,8 @@ impl Rules {
         &mut self.state.players[self.state.active_player]
     }
 
-    fn start_phase<T: IO>(&mut self, io: &mut T) {
-        self.phase_change(io, Phase::Start);
+    fn stand_phase<T: IO>(&mut self, io: &mut T) {
+        self.phase_change(io, Phase::Stand);
     }
 
     fn draw_phase<T: IO>(&mut self, io: &mut T) {
@@ -229,6 +229,7 @@ mod tests {
 
         let starting_hand_size = rules.current_player().hand.content.len();
         let starting_deck_size = rules.current_player().deck.content.len();
+        let starting_clock_size = rules.current_player().clock.content.len();
 
         rules.clock_phase(&mut ());
 
@@ -239,6 +240,35 @@ mod tests {
         assert_eq!(
             rules.current_player().deck.content.len(),
             starting_deck_size
+        );
+        assert_eq!(
+            rules.current_player().clock.content.len(),
+            starting_clock_size
+        );
+    }
+    #[test]
+    fn clock_phase_will_clock() {
+        let mut rules = Rules::new();
+
+        let starting_hand_size = rules.current_player().hand.content.len();
+        let starting_deck_size = rules.current_player().deck.content.len();
+        let starting_clock_size = rules.current_player().clock.content.len();
+
+        rules.draw_phase(&mut ());
+
+        rules.clock_phase(&mut ());
+
+        assert_eq!(
+            rules.current_player().hand.content.len(),
+            starting_hand_size + 2
+        );
+        assert_eq!(
+            rules.current_player().deck.content.len(),
+            starting_deck_size - 3
+        );
+        assert_eq!(
+            rules.current_player().clock.content.len(),
+            starting_clock_size + 1
         );
     }
 

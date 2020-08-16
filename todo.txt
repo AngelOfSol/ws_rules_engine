@@ -29,7 +29,7 @@
         [x] make waiting room
         [x] take cards out of hand
         [x] put them on top of waiting room
-[] handle leveling
+[x] handle leveling
     [x] create level zone
     [x] create interrupt processing for leveling
     [x] ask choice to choose what card to level
@@ -37,6 +37,10 @@
     [x] move 6 cards to the bottom of the level zone
     [x] move card to level zone
     [x] log leveling event
+[] add documentation comments to everything
+[] make sure clock phase can handle zero cards in hand
+    [] clock phase should ask for a Some(card) or None, and provide no options
+[] change active_player to PlayerID for more typesafety
 [] handle refreshing
     [] create interrupt processing for refreshing
     [] make sure that player gets to choose between refresh and level, when they both happen at the same time
@@ -47,9 +51,16 @@
     [] implement loss checking
         [] level 4
         [] empty waiting room, empty library
+[] end the game when game is over
+[] add playing characters
+    [] add data for characters to game_data
+    [] create references to those cards
+    [] default card base = 0/0 3000 yellow character with no traits
+    [] add level restrictions
+        [] base level
+    [] add color restrictions
+        [] base color
+    
 [] start adding integration tests
 
-Maybes:
-
-[] move to taking io in by hand rather than being a feature of the rules engine
 

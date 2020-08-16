@@ -13,7 +13,6 @@ pub trait IO {
     fn draw(&mut self, card: CardId, player: usize);
     fn discard(&mut self, card: CardId, player: usize);
     fn level_up(&mut self, result: LevelUpResult, player: usize);
-
     fn clock(&mut self, card: CardId, player: usize);
 
     fn ask_card_optional_choice(
@@ -40,11 +39,15 @@ impl IO for () {
 
     fn ask_card_optional_choice(
         &mut self,
-        _: &[CardId],
+        cards: &[CardId],
         _: usize,
         _: ChoiceContext,
     ) -> Option<usize> {
-        None
+        if cards.is_empty() {
+            None
+        } else {
+            Some(0)
+        }
     }
 
     fn ask_card_required_choice(&mut self, _: &[CardId], _: usize, _: ChoiceContext) -> usize {

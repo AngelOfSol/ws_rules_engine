@@ -21,7 +21,7 @@ impl GameState {
         Self {
             players,
             active_player: 0,
-            phase: Phase::Start,
+            phase: Phase::Stand,
             turn: 0,
         }
     }
