@@ -127,7 +127,6 @@ impl Rules {
                 if self.state.players[*player].needs_to_level() {
                     done = false;
                     self.level_player(io, *player);
-                    //
                 }
             }
 
@@ -135,11 +134,6 @@ impl Rules {
                 return;
             }
         }
-        // check what interrupts to process
-        // get a list of who and what interrupts exist
-        // process them in the correct order
-        // if we did no processes, we return
-        // if we did any processes, we go again
     }
 
     fn level_player<T: IO>(&mut self, io: &mut T, player: usize) {
@@ -254,7 +248,7 @@ mod tests {
         let starting_deck_size = rules.current_player().deck.content.len();
         let starting_clock_size = rules.current_player().clock.content.len();
 
-        rules.draw_phase(&mut ());
+        rules.current_player_mut().draw_card().unwrap();
 
         rules.clock_phase(&mut ());
 
