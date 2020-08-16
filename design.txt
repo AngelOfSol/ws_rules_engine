@@ -78,3 +78,50 @@ struct CardStats {
 trait EngineInterface {
     ...
 }
+
+buff algorithm
+
+Buff {
+    dependencies: HashSet<Field>,
+    affected: HashSet<Field>,
+    timestamp: Timestamp,
+}
+
+let buffs = Vec<Buff>::argument;
+let ordered_renders = Vec<Buff>::empty;
+let put_off = Vec<Buff>::empty;
+let remaining_affected = HashSet<Field>::empty;
+let remaining_dependencies = HashSet<Field>::empty;
+
+while !buffs.is_empty || !put_off.is_empty() {
+    if buffs.is_empty() && !put_off.is_empty() {
+        mem::swap(buffs, put_off);
+    }
+
+    remaining_affected = buffs.iter().flat_map(|buff| buff.affected.iter()).collect();
+    for buff in buffs {
+        if buff.dependencies.intersection(remaining_affected).is_empty() {
+            buffs.remove(buff);
+            ordered_renders.push(buff);
+        }
+    }
+    remaining_dependencies = buffs.iter().flat_map(|buff| buff.dependencies.iter()).collect();
+    for buff in buffs {
+        if buff.affected.intersection(remaining_dependencies).is_empty() {
+            put_off.push(buff);
+            buffs.remove(buff);
+        }
+    }
+
+   
+
+    if !buffs.is_empty() && 
+        ordered_renders.has_not_changed_this_iteration() && 
+        put_off.has_not_changed_this_iteration()
+     {
+        let buff = buffs.iter().min_by(|buff| buff.timestamp);
+        buffs.remove(buff);
+        ordered_renders.push(buff);
+    }
+}
+https://play.rust-lang.org/?version=stable&mode=debug&edition=2018&gist=8f8f82406b6ec5030f2c3e1ab6f61a66
