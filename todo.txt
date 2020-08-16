@@ -60,7 +60,14 @@
         [] base level
     [] add color restrictions
         [] base color
-    
+
+[] add gamestate rendering
+    [] instead of sending our internal rules engine struct over to the user
+    [] send a rendered version that puts info directly in the zones and slots instead
 [] start adding integration tests
+    [x] integ IO helper
+    [x] logs every event and who they happened to
+    [x] logs every choice to be made, by who, and what answer should be given in that context
+    [x] provide structure for logged events that can be tested versus while the game is run
 
 
