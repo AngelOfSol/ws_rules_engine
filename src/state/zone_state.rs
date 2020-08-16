@@ -5,22 +5,27 @@ pub struct ZoneState {
 }
 
 impl ZoneState {
+    /// Creates an empty zone.
     pub fn new() -> Self {
         Self {
             content: Vec::new(),
         }
     }
+    /// Creates a zone with the `content`.
     pub fn with_content(content: Vec<CardId>) -> Self {
         Self { content }
     }
 
+    /// Puts `card` on top of the zone.
     pub fn put_on_top(&mut self, card: CardId) {
         self.content.push(card);
     }
 
+    /// Attempts to take the top card out of the zone.
     pub fn take_top(&mut self) -> Option<CardId> {
         self.content.pop()
     }
+    /// Attempts to take the bottom card out of the zone.
     pub fn take_bottom(&mut self) -> Option<CardId> {
         if self.content.is_empty() {
             None
@@ -29,10 +34,13 @@ impl ZoneState {
         }
     }
 
-    pub fn take_card_id(&mut self, id: CardId) -> Option<CardId> {
+    /// Attempts to take the `card` out of the zone.
+    ///
+    /// Returns the card taken if successful.
+    pub fn take_card_id(&mut self, card: CardId) -> Option<CardId> {
         Some(
             self.content
-                .remove(self.content.iter().position(|item| *item == id)?),
+                .remove(self.content.iter().position(|item| *item == card)?),
         )
     }
 }

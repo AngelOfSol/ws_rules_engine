@@ -38,15 +38,17 @@
     [x] move card to level zone
     [x] log leveling event
 [] add documentation comments to everything
-[] make sure clock phase can handle zero cards in hand
-    [] clock phase should ask for a Some(card) or None, and provide no options
+[x] make sure clock phase can handle zero cards in hand
+    [x] clock phase should ask for a Some(card) or None, and provide no options
 [] change active_player to PlayerID for more typesafety
 [] handle refreshing
     [] create interrupt processing for refreshing
     [] make sure that player gets to choose between refresh and level, when they both happen at the same time
+        [] add integration tests to make sure this works properly
     [] move waiting room to deck
     [] add a point to the refresh point
     [] handle the refresh point at the correct timing
+    [] introduce check timings
 [] handle losing
     [] implement loss checking
         [] level 4
@@ -56,10 +58,32 @@
     [] add data for characters to game_data
     [] create references to those cards
     [] default card base = 0/0 3000 yellow character with no traits
+    [] introduce play timings
     [] add level restrictions
         [] base level
     [] add color restrictions
         [] base color
+[] add climax phase
+    [] climaxes don't do anything but exist and then go to the waiting room
+[] add attack steps
+    [] attack declaration
+        [] front attack
+        [] side attack
+        [] direct attack
+    [] trigger step
+        [] add stock
+        [] add buff system and soul triggers
+    [] damage step
+        [] implement damage processing
+    [] battle step
+        [] compare power
+    [] encore step
+        [] choose reversed characters to put to waiting room one by one
+[] implement costs for playing cards 
+    [] check if cost is fulfillable
+    [] pay cost interface
+[] add (3) ENCORE to every character
+[] move to events rather than function call per event type
 
 [] add gamestate rendering
     [] instead of sending our internal rules engine struct over to the user
@@ -69,5 +93,6 @@
     [x] logs every event and who they happened to
     [x] logs every choice to be made, by who, and what answer should be given in that context
     [x] provide structure for logged events that can be tested versus while the game is run
+    [] add an actual integ test
 
 

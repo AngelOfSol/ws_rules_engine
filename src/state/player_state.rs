@@ -1,8 +1,13 @@
 use crate::data::CardId;
 use crate::state::zone_state::ZoneState;
 
+/// The max size a players clock can be before triggering a level-up interrupt process.
 pub const MAX_CLOCK_SIZE: usize = 6;
 
+/// Contains the state of a given player, including
+/// where all of their cards are currently located.
+/// When at rest, this state will contain 50 cards
+/// among all of its zones.
 #[derive(Debug)]
 pub struct PlayerState {
     pub deck: ZoneState,
@@ -13,38 +18,55 @@ pub struct PlayerState {
     base_hand_limit: usize,
 }
 
+/// ZST representing the deck being empty.
 #[derive(Debug, Copy, Clone, Eq, PartialEq)]
 pub struct DeckEmpty;
 
+/// The kinds of errors attempting to discard
+/// a card can create.
 #[derive(Debug, Copy, Clone, Eq, PartialEq)]
 pub enum DiscardError {
     EmptyHand,
     InvalidCard,
 }
 
+/// The kinds of errors attempting to level
+/// up can create.
 #[derive(Debug, Copy, Clone, Eq, PartialEq)]
 pub enum LevelUpError {
     CannotLevel,
     InvalidCard,
 }
 
+/// The resulting data from a level up.  Contains
+/// what cards were processed during the level up
+/// and where they went.
 #[derive(Debug, Clone, Eq, PartialEq)]
 pub struct LevelUpResult {
-    leveled_card: CardId,
-    sent_to_waiting_room: Vec<CardId>,
+    pub leveled_card: CardId,
+    pub sent_to_waiting_room: Vec<CardId>,
 }
 
 impl PlayerState {
+    /// A default empty PlayerState.
     pub fn new() -> Self {
         Self::default()
     }
+    /// Trys to draw the top card of the deck.
+    ///
+    /// Returns the CardId drawn, or an error if there
+    /// are no cards in deck.
     pub fn draw_card(&mut self) -> Result<CardId, DeckEmpty> {
         let card = self.deck.take_top().ok_or(DeckEmpty)?;
         self.hand.put_on_top(card);
         Ok(card)
     }
 
-    pub fn discard_card(&mut self, card: CardId) -> Result<(), DiscardError> {
+    /// Trys to discard the `card` specified from hand.
+    ///
+    /// Returns the card discared (i.e. `card`) or an error
+    /// if for some reason that card could not be discarded.
+    pub fn discard_card(&mut self, card: CardId) -> Result<CardId, DiscardError> {
         if self.hand.content.is_empty() {
             return Err(DiscardError::EmptyHand);
         }
@@ -56,17 +78,27 @@ impl PlayerState {
 
         self.waiting_room.put_on_top(card);
 
-        Ok(())
+        Ok(card)
     }
 
+    /// Checks to see if the player's current
+    /// hand exceeds their handlimit.
     pub fn exceeding_handlimit(&self) -> bool {
         self.hand.content.len() > self.base_hand_limit
     }
 
+    /// Checks to see if the player's current
+    /// clock exceeds the MAX_CLOCK_SIZE.  If
+    /// this is true, then level-up processing
+    /// needs to be done.
     pub fn needs_to_level(&self) -> bool {
         self.clock.content.len() > MAX_CLOCK_SIZE
     }
 
+    /// Attempts to level up with the specified `card`.
+    ///
+    /// Returns the result of the level up, or an error
+    /// if a level up could not be performed.
     pub fn level_up_with(&mut self, level_up_card: CardId) -> Result<LevelUpResult, LevelUpError> {
         if !self.needs_to_level() {
             return Err(LevelUpError::CannotLevel);

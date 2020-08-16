@@ -2,6 +2,8 @@ pub mod game_data;
 mod phase;
 
 pub use phase::Phase;
+
+/// A lightweight ID used to identify unique cards in a game state, and it's associated game data.
 #[derive(Debug, Copy, Clone, Ord, PartialOrd, Eq, PartialEq)]
 pub struct CardId(pub usize);
 

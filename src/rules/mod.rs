@@ -5,6 +5,12 @@ use crate::data::{CardId, Phase};
 use crate::state::game_state::GameState;
 use crate::state::player_state::PlayerState;
 use io::{ChoiceContext, IO};
+
+/// The engine that will hold all the game state and data
+/// to run rules checking and processing.  All functions
+/// relating to processing turns will require an IO object
+/// so the engine can inform the consumer what events have
+/// occurred, and what input it needs from players.
 #[derive(Debug)]
 pub struct Rules {
     state: GameState,
@@ -12,6 +18,8 @@ pub struct Rules {
 }
 
 impl Rules {
+    /// Creates a default engine.  Will be deprecated once a more
+    /// robust game creation method exists.
     pub fn new() -> Self {
         Rules {
             state: GameState::new(),
@@ -19,6 +27,10 @@ impl Rules {
         }
     }
 
+    /// Runs through one turn based on the current player.  After
+    /// the turn is over, the turn will be switched to the next player.
+    /// Generally this should be called in a loop until the game is
+    /// over.
     pub fn run_turn<T: IO>(&mut self, io: &mut T) {
         self.stand_phase(io);
 
@@ -28,51 +40,97 @@ impl Rules {
 
         self.end_phase(io);
     }
-    fn current_player(&self) -> &PlayerState {
+
+    /// Returns a reference to the active player.
+    fn active_player(&self) -> &PlayerState {
         &self.state.players[self.state.active_player]
     }
 
+    /// Returns a mutable reference to the active player.
     #[allow(dead_code)]
-    fn current_player_mut(&mut self) -> &mut PlayerState {
+    fn active_player_mut(&mut self) -> &mut PlayerState {
         &mut self.state.players[self.state.active_player]
     }
 
+    /// Processes the stand phase.
+    ///
+    /// Publishes a Phase change with the value `Phase::Stand`
     fn stand_phase<T: IO>(&mut self, io: &mut T) {
         self.phase_change(io, Phase::Stand);
     }
 
+    /// Processes the draw phase.
+    ///
+    /// 1) Publishes a Phase change with the value `Phase::Draw`
+    ///
+    /// 2) Draws a card for the active player.
     fn draw_phase<T: IO>(&mut self, io: &mut T) {
         self.phase_change(io, Phase::Draw);
         self.draw_card(io, self.state.active_player);
     }
 
+    /// Processes the clock phase.
+    ///
+    /// 1) Publishes a Phase change with the value `Phase::Clock`
+    ///
+    /// 2) Asks the active player to choose a card to clock, or no card.
+    ///
+    /// 3) If a card is chosen, perform the clock draw two action.
     fn clock_phase<T: IO>(&mut self, io: &mut T) {
         self.phase_change(io, Phase::Clock);
         let card = io.ask_card_optional_choice(
-            &self.current_player().hand.content,
+            &self.active_player().hand.content,
             self.state.active_player,
             ChoiceContext::ClockPhaseCardToClock,
         );
 
         if let Some(card) = card {
-            let card = self.current_player().hand.content[card];
+            let card = self.active_player().hand.content[card];
             self.clock_card(io, card, self.state.active_player);
         }
     }
 
-    // precondition: card exists in player's hand
-    fn clock_card<T: IO>(&mut self, io: &mut T, card: CardId, player: usize) {
-        let player = &mut self.state.players[player];
-        let card = player.hand.take_card_id(card).unwrap();
-        player.clock.put_on_top(card);
-        self.interrupt_type_rules_processing(io);
+    /// Processes the clock phase.
+    ///
+    /// 1) Publishes a Phase change with the value `Phase::End`
+    ///
+    /// 2) Checks the active player's handlimit.
+    ///
+    /// 3) Switches turns.
+    fn end_phase<T: IO>(&mut self, io: &mut T) {
+        self.phase_change(io, Phase::End);
 
-        io.clock(card, self.state.active_player);
+        self.check_handlimit(io, self.state.active_player);
 
-        self.draw_card(io, self.state.active_player);
-        self.draw_card(io, self.state.active_player);
+        self.switch_turns();
     }
 
+    /// Clocks a card for the specified player, to draw two cards.
+    ///
+    /// Precondition: `card` must exist in `player`'s hand.
+    ///
+    /// Postcondition: A clock event will be published,
+    /// the requested card will be on top of the player's clock,
+    /// and the player will attempt to draw two cards.
+    fn clock_card<T: IO>(&mut self, io: &mut T, card: CardId, player: usize) {
+        let player_state = &mut self.state.players[player];
+        let card = player_state.hand.take_card_id(card).unwrap();
+        player_state.clock.put_on_top(card);
+        self.interrupt_type_rules_processing(io);
+
+        io.clock(card, player);
+
+        self.draw_card(io, player);
+        self.draw_card(io, player);
+    }
+
+    /// Clocks a card for the specified player, to draw two cards.
+    ///
+    /// Precondition: The `player`'s deck has at least one card in it.
+    ///
+    /// Postcondition: A draw event will be published,
+    /// and the top card of the `player`'s deck will be drawn
+    /// into their hand.
     fn draw_card<T: IO>(&mut self, io: &mut T, player: usize) {
         let player_state = &mut self.state.players[player];
         let card = player_state
@@ -86,15 +144,11 @@ impl Rules {
         io.phase_change(phase, self.state.active_player);
     }
 
-    fn end_phase<T: IO>(&mut self, io: &mut T) {
-        self.phase_change(io, Phase::End);
-
-        self.check_handlimit(io, self.state.active_player);
-        //
-
-        self.switch_turns();
-    }
-
+    /// Checks for and resolves handlimit issues for the `player`.
+    ///
+    /// Postcondition: For every card over the `player`'s handlimit,
+    /// one card will be discarded of the `player`'s chioce.
+    /// For each of these discards a discard event will be published.
     fn check_handlimit<T: IO>(&mut self, io: &mut T, player: usize) {
         let player_state = &mut self.state.players[player];
         while player_state.exceeding_handlimit() {
@@ -110,6 +164,11 @@ impl Rules {
         }
     }
 
+    /// Switches who's turn it is.
+    ///
+    /// Postcondition: The active_player is different than
+    /// before.  If it is now the first player's turn, then
+    /// the turn counter is incremented by 1.
     fn switch_turns(&mut self) {
         if self.state.active_player == 0 {
             self.state.active_player = 1;
@@ -119,6 +178,11 @@ impl Rules {
         }
     }
 
+    /// Processes interrupt-type rules.
+    ///
+    /// Postconditions: both players have valid game states
+    /// in regards to level-up rules processing (i.e. they
+    /// both have less than 7 cards in clock).
     fn interrupt_type_rules_processing<T: IO>(&mut self, io: &mut T) {
         loop {
             let mut done = true;
@@ -135,7 +199,12 @@ impl Rules {
             }
         }
     }
-
+    /// Levels up the `player`.
+    ///
+    /// Postcondition: The `player`'s clock is cleared of
+    /// the bottom 7 cards, and one card is chosen to be put
+    /// in the level zone.  The rest are put in the waiting
+    /// room of that player.  A level up event is emitted.
     fn level_player<T: IO>(&mut self, io: &mut T, player: usize) {
         let player_state = &mut self.state.players[player];
         let bottom_clock = &player_state.clock.content[0..7];
@@ -202,17 +271,17 @@ mod tests {
     fn draw_phase() {
         let mut rules = Rules::new();
 
-        let starting_hand_size = rules.current_player().hand.content.len();
-        let starting_deck_size = rules.current_player().deck.content.len();
+        let starting_hand_size = rules.active_player().hand.content.len();
+        let starting_deck_size = rules.active_player().deck.content.len();
 
         rules.draw_phase(&mut ());
 
         assert_eq!(
-            rules.current_player().hand.content.len(),
+            rules.active_player().hand.content.len(),
             starting_hand_size + 1
         );
         assert_eq!(
-            rules.current_player().deck.content.len(),
+            rules.active_player().deck.content.len(),
             starting_deck_size - 1
         );
     }
@@ -221,22 +290,16 @@ mod tests {
     fn clock_phase_no_clock() {
         let mut rules = Rules::new();
 
-        let starting_hand_size = rules.current_player().hand.content.len();
-        let starting_deck_size = rules.current_player().deck.content.len();
-        let starting_clock_size = rules.current_player().clock.content.len();
+        let starting_hand_size = rules.active_player().hand.content.len();
+        let starting_deck_size = rules.active_player().deck.content.len();
+        let starting_clock_size = rules.active_player().clock.content.len();
 
         rules.clock_phase(&mut ());
 
+        assert_eq!(rules.active_player().hand.content.len(), starting_hand_size);
+        assert_eq!(rules.active_player().deck.content.len(), starting_deck_size);
         assert_eq!(
-            rules.current_player().hand.content.len(),
-            starting_hand_size
-        );
-        assert_eq!(
-            rules.current_player().deck.content.len(),
-            starting_deck_size
-        );
-        assert_eq!(
-            rules.current_player().clock.content.len(),
+            rules.active_player().clock.content.len(),
             starting_clock_size
         );
     }
@@ -244,24 +307,24 @@ mod tests {
     fn clock_phase_will_clock() {
         let mut rules = Rules::new();
 
-        let starting_hand_size = rules.current_player().hand.content.len();
-        let starting_deck_size = rules.current_player().deck.content.len();
-        let starting_clock_size = rules.current_player().clock.content.len();
+        let starting_hand_size = rules.active_player().hand.content.len();
+        let starting_deck_size = rules.active_player().deck.content.len();
+        let starting_clock_size = rules.active_player().clock.content.len();
 
-        rules.current_player_mut().draw_card().unwrap();
+        rules.active_player_mut().draw_card().unwrap();
 
         rules.clock_phase(&mut ());
 
         assert_eq!(
-            rules.current_player().hand.content.len(),
+            rules.active_player().hand.content.len(),
             starting_hand_size + 2
         );
         assert_eq!(
-            rules.current_player().deck.content.len(),
+            rules.active_player().deck.content.len(),
             starting_deck_size - 3
         );
         assert_eq!(
-            rules.current_player().clock.content.len(),
+            rules.active_player().clock.content.len(),
             starting_clock_size + 1
         );
     }
@@ -270,25 +333,25 @@ mod tests {
     fn clock_card() {
         let mut rules = Rules::new();
 
-        rules.current_player_mut().draw_card().unwrap();
+        rules.active_player_mut().draw_card().unwrap();
 
-        let starting_hand_size = rules.current_player().hand.content.len();
-        let starting_clock_size = rules.current_player().clock.content.len();
-        let clocked_card = rules.current_player().hand.content[0];
+        let starting_hand_size = rules.active_player().hand.content.len();
+        let starting_clock_size = rules.active_player().clock.content.len();
+        let clocked_card = rules.active_player().hand.content[0];
 
         rules.clock_card(&mut (), clocked_card, rules.state.active_player);
 
         // plus 2 cards - 1
         assert_eq!(
-            rules.current_player().hand.content.len(),
+            rules.active_player().hand.content.len(),
             starting_hand_size + 1
         );
         assert_eq!(
-            rules.current_player().clock.content.len(),
+            rules.active_player().clock.content.len(),
             starting_clock_size + 1
         );
         assert_eq!(
-            *rules.current_player().clock.content.last().unwrap(),
+            *rules.active_player().clock.content.last().unwrap(),
             clocked_card
         );
     }
@@ -300,15 +363,15 @@ mod tests {
         for _ in 0..10 {
             rules.draw_card(&mut (), rules.state.active_player);
         }
-        let starting_hand_size = rules.current_player().hand.content.len();
-        let starting_waiting_room_size = rules.current_player().waiting_room.content.len();
+        let starting_hand_size = rules.active_player().hand.content.len();
+        let starting_waiting_room_size = rules.active_player().waiting_room.content.len();
 
         rules.check_handlimit(&mut (), rules.state.active_player);
 
-        assert!(!rules.current_player().exceeding_handlimit());
+        assert!(!rules.active_player().exceeding_handlimit());
         assert_eq!(
-            rules.current_player().waiting_room.content.len(),
-            starting_hand_size - rules.current_player().hand.content.len()
+            rules.active_player().waiting_room.content.len(),
+            starting_hand_size - rules.active_player().hand.content.len()
                 + starting_waiting_room_size
         );
     }
@@ -318,19 +381,19 @@ mod tests {
         let mut rules = Rules::new();
 
         for i in 0..14 {
-            rules.current_player_mut().clock.put_on_top(i.into());
+            rules.active_player_mut().clock.put_on_top(i.into());
         }
 
-        let starting_level = rules.current_player().level.content.len();
-        let starting_waiting_room_size = rules.current_player().waiting_room.content.len();
+        let starting_level = rules.active_player().level.content.len();
+        let starting_waiting_room_size = rules.active_player().waiting_room.content.len();
         rules.interrupt_type_rules_processing(&mut ());
 
         assert_eq!(
-            rules.current_player().level.content.len(),
+            rules.active_player().level.content.len(),
             starting_level + 2
         );
         assert_eq!(
-            rules.current_player().waiting_room.content.len(),
+            rules.active_player().waiting_room.content.len(),
             starting_waiting_room_size + 6 * 2
         )
     }
