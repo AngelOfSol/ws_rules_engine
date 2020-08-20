@@ -1,5 +1,5 @@
 use ws_engine::data::{CardId, Phase};
-use ws_engine::rules::io::{ChoiceContext, IO};
+use ws_engine::rules::io::{ChoiceContext, Input, Output};
 use ws_engine::state::player_state::LevelUpResult;
 
 #[derive(Debug, PartialEq, Eq, Clone)]
@@ -24,6 +24,9 @@ enum Event {
         result: LevelUpResult,
         player: usize,
     },
+    Refreshed {
+        player: usize,
+    },
 }
 
 struct MayAnswer {
@@ -45,7 +48,7 @@ struct IntegrationIO {
     must_answers: Vec<MustAnswer>,
 }
 
-impl IO for IntegrationIO {
+impl Output for IntegrationIO {
     fn discard(&mut self, card: CardId, player: usize) {
         assert_eq!(self.events.remove(0), Event::Discard { card, player })
     }
@@ -61,7 +64,13 @@ impl IO for IntegrationIO {
     fn level_up(&mut self, result: LevelUpResult, player: usize) {
         assert_eq!(self.events.remove(0), Event::LevelUp { result, player })
     }
-    fn ask_card_optional_choice(
+    fn refreshed(&mut self, player: usize) {
+        assert_eq!(self.events.remove(0), Event::Refreshed { player })
+    }
+}
+
+impl Input<CardId> for IntegrationIO {
+    fn ask_optional_choice(
         &mut self,
         options: &[CardId],
         player: usize,
@@ -74,7 +83,7 @@ impl IO for IntegrationIO {
 
         answer.value
     }
-    fn ask_card_required_choice(
+    fn ask_required_choice(
         &mut self,
         options: &[CardId],
         player: usize,

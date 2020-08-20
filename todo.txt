@@ -47,17 +47,18 @@
     [x] provide structure for logged events that can be tested versus while the game is run
     [] add an actual integ test
 [] handle refreshing
-    [] create interrupt processing for refreshing
-    [] make sure that player gets to choose between refresh and level, when they both happen at the same time
-        [] add integration tests to make sure this works properly
+    [x] create interrupt processing for refreshing
+    [x] make sure that player gets to choose between refresh and level, when they both happen at the same time
+        [] add test to make sure this works properly
     [x] move waiting room to deck
-    [] add a point to the refresh point
+    [x] add a point to the refresh point
     [] handle the refresh point at the correct timing
     [] introduce check timings
 [] handle losing
     [] implement loss checking
         [] level 4
         [] empty waiting room, empty library
+    [] earlying outing of execution
 [] end the game when game is over
 [] add playing characters
     [] add data for characters to game_data

@@ -4,7 +4,7 @@ use crate::data::game_data::GameData;
 use crate::data::{CardId, Phase};
 use crate::state::game_state::GameState;
 use crate::state::player_state::PlayerState;
-use io::{ChoiceContext, IO};
+use io::{ChoiceContext, InterruptChoice, RulesEngineIO};
 
 /// The engine that will hold all the game state and data
 /// to run rules checking and processing.  All functions
@@ -31,7 +31,7 @@ impl Rules {
     /// the turn is over, the turn will be switched to the next player.
     /// Generally this should be called in a loop until the game is
     /// over.
-    pub fn run_turn<T: IO>(&mut self, io: &mut T) {
+    pub fn run_turn<T: RulesEngineIO>(&mut self, io: &mut T) {
         self.stand_phase(io);
 
         self.draw_phase(io);
@@ -55,7 +55,7 @@ impl Rules {
     /// Processes the stand phase.
     ///
     /// Publishes a Phase change with the value `Phase::Stand`
-    fn stand_phase<T: IO>(&mut self, io: &mut T) {
+    fn stand_phase<T: RulesEngineIO>(&mut self, io: &mut T) {
         self.phase_change(io, Phase::Stand);
     }
 
@@ -64,7 +64,7 @@ impl Rules {
     /// 1) Publishes a Phase change with the value `Phase::Draw`
     ///
     /// 2) Draws a card for the active player.
-    fn draw_phase<T: IO>(&mut self, io: &mut T) {
+    fn draw_phase<T: RulesEngineIO>(&mut self, io: &mut T) {
         self.phase_change(io, Phase::Draw);
         self.draw_card(io, self.state.active_player);
     }
@@ -76,9 +76,9 @@ impl Rules {
     /// 2) Asks the active player to choose a card to clock, or no card.
     ///
     /// 3) If a card is chosen, perform the clock draw two action.
-    fn clock_phase<T: IO>(&mut self, io: &mut T) {
+    fn clock_phase<T: RulesEngineIO>(&mut self, io: &mut T) {
         self.phase_change(io, Phase::Clock);
-        let card = io.ask_card_optional_choice(
+        let card = io.ask_optional_choice(
             &self.active_player().hand.content,
             self.state.active_player,
             ChoiceContext::ClockPhaseCardToClock,
@@ -97,7 +97,7 @@ impl Rules {
     /// 2) Checks the active player's handlimit.
     ///
     /// 3) Switches turns.
-    fn end_phase<T: IO>(&mut self, io: &mut T) {
+    fn end_phase<T: RulesEngineIO>(&mut self, io: &mut T) {
         self.phase_change(io, Phase::End);
 
         self.check_handlimit(io, self.state.active_player);
@@ -112,7 +112,7 @@ impl Rules {
     /// Postcondition: A clock event will be published,
     /// the requested card will be on top of the player's clock,
     /// and the player will attempt to draw two cards.
-    fn clock_card<T: IO>(&mut self, io: &mut T, card: CardId, player: usize) {
+    fn clock_card<T: RulesEngineIO>(&mut self, io: &mut T, card: CardId, player: usize) {
         let player_state = &mut self.state.players[player];
         let card = player_state.hand.take_card_id(card).unwrap();
         player_state.clock.put_on_top(card);
@@ -131,7 +131,7 @@ impl Rules {
     /// Postcondition: A draw event will be published,
     /// and the top card of the `player`'s deck will be drawn
     /// into their hand.
-    fn draw_card<T: IO>(&mut self, io: &mut T, player: usize) {
+    fn draw_card<T: RulesEngineIO>(&mut self, io: &mut T, player: usize) {
         let player_state = &mut self.state.players[player];
         let card = player_state
             .draw_card()
@@ -139,7 +139,7 @@ impl Rules {
         io.draw(card, player);
     }
 
-    fn phase_change<T: IO>(&mut self, io: &mut T, phase: Phase) {
+    fn phase_change<T: RulesEngineIO>(&mut self, io: &mut T, phase: Phase) {
         self.state.phase = phase;
         io.phase_change(phase, self.state.active_player);
     }
@@ -149,10 +149,10 @@ impl Rules {
     /// Postcondition: For every card over the `player`'s handlimit,
     /// one card will be discarded of the `player`'s chioce.
     /// For each of these discards a discard event will be published.
-    fn check_handlimit<T: IO>(&mut self, io: &mut T, player: usize) {
+    fn check_handlimit<T: RulesEngineIO>(&mut self, io: &mut T, player: usize) {
         let player_state = &mut self.state.players[player];
         while player_state.exceeding_handlimit() {
-            let to_discard = io.ask_card_required_choice(
+            let to_discard = io.ask_required_choice(
                 &player_state.hand.content,
                 self.state.active_player,
                 ChoiceContext::HandLimitDiscard,
@@ -183,14 +183,45 @@ impl Rules {
     /// Postconditions: both players have valid game states
     /// in regards to level-up rules processing (i.e. they
     /// both have less than 7 cards in clock).
-    fn interrupt_type_rules_processing<T: IO>(&mut self, io: &mut T) {
+    fn interrupt_type_rules_processing<T: RulesEngineIO>(&mut self, io: &mut T) {
         loop {
             let mut done = true;
 
             for player in [self.state.active_player(), self.state.non_active_player()].iter() {
-                if self.state.players[*player].needs_to_level() {
+                if self.state.players[*player].needs_to_level()
+                    && self.state.players[*player].needs_to_refresh()
+                {
+                    let choice = io.ask_required_choice(
+                        &[InterruptChoice::Level, InterruptChoice::Refresh],
+                        *player,
+                        ChoiceContext::InterruptTimingChoice,
+                    );
+
+                    match [InterruptChoice::Level, InterruptChoice::Refresh][choice] {
+                        InterruptChoice::Level => {
+                            self.level_player(io, *player);
+                        }
+                        InterruptChoice::Refresh => {
+                            assert_eq!(self.state.players[*player].refresh().unwrap(), false);
+
+                            io.refreshed(*player);
+                        }
+                    }
+
                     done = false;
-                    self.level_player(io, *player);
+                } else {
+                    if self.state.players[*player].needs_to_level() {
+                        done = false;
+                        self.level_player(io, *player);
+                    }
+
+                    if self.state.players[*player].needs_to_refresh() {
+                        done = false;
+
+                        assert_eq!(self.state.players[*player].refresh().unwrap(), false);
+
+                        io.refreshed(*player);
+                    }
                 }
             }
 
@@ -205,11 +236,10 @@ impl Rules {
     /// the bottom 7 cards, and one card is chosen to be put
     /// in the level zone.  The rest are put in the waiting
     /// room of that player.  A level up event is emitted.
-    fn level_player<T: IO>(&mut self, io: &mut T, player: usize) {
+    fn level_player<T: RulesEngineIO>(&mut self, io: &mut T, player: usize) {
         let player_state = &mut self.state.players[player];
         let bottom_clock = &player_state.clock.content[0..7];
-        let card_idx =
-            io.ask_card_required_choice(bottom_clock, player, ChoiceContext::LevelUpProcess);
+        let card_idx = io.ask_required_choice(bottom_clock, player, ChoiceContext::LevelUpProcess);
         let card = bottom_clock[card_idx];
 
         let result = player_state.level_up_with(card).unwrap();
@@ -220,6 +250,7 @@ impl Rules {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::rules::io::PickX;
 
     #[test]
     fn switch_turns() {
@@ -396,5 +427,95 @@ mod tests {
             rules.active_player().waiting_room.content.len(),
             starting_waiting_room_size + 6 * 2
         )
+    }
+
+    #[test]
+    fn check_refreshing() {
+        let mut rules = Rules::new();
+
+        rules.active_player_mut().deck.content.clear();
+
+        for i in 0..14 {
+            rules.active_player_mut().waiting_room.put_on_top(i.into());
+        }
+
+        let starting_waiting_room_size = dbg!(rules.active_player().waiting_room.content.len());
+        let starting_deck_size = rules.active_player().deck.content.len();
+
+        rules.interrupt_type_rules_processing(&mut ());
+
+        assert_eq!(
+            rules.active_player().deck.content.len(),
+            starting_deck_size + 14
+        );
+
+        assert_eq!(rules.active_player().refresh_point, 1);
+
+        assert_eq!(
+            rules.active_player().waiting_room.content.len(),
+            starting_waiting_room_size - 14
+        )
+    }
+
+    #[test]
+    fn check_level_then_refresh() {
+        let mut rules = Rules::new();
+
+        rules.active_player_mut().deck.content.clear();
+
+        for i in 0..14 {
+            rules.active_player_mut().waiting_room.put_on_top(i.into());
+            rules.active_player_mut().clock.put_on_top(i.into());
+        }
+
+        let starting_deck_size = rules.active_player().deck.content.len();
+        let starting_level = rules.active_player().level.content.len();
+
+        rules.interrupt_type_rules_processing(&mut ());
+
+        assert_eq!(
+            rules.active_player().deck.content.len(),
+            starting_deck_size + 14 + 12
+        );
+
+        assert_eq!(rules.active_player().waiting_room.content.len(), 0);
+
+        assert_eq!(
+            rules.active_player().level.content.len(),
+            starting_level + 2
+        );
+
+        assert_eq!(rules.active_player().refresh_point, 1);
+    }
+
+    #[test]
+    fn check_refresh_then_level() {
+        let mut rules = Rules::new();
+
+        rules.active_player_mut().deck.content.clear();
+
+        for i in 0..7 {
+            rules.active_player_mut().waiting_room.put_on_top(i.into());
+            rules.active_player_mut().clock.put_on_top(i.into());
+        }
+
+        let starting_deck_size = rules.active_player().deck.content.len();
+        let starting_level = rules.active_player().level.content.len();
+
+        rules.interrupt_type_rules_processing(&mut PickX(1));
+
+        assert_eq!(
+            rules.active_player().deck.content.len(),
+            starting_deck_size + 7
+        );
+
+        assert_eq!(rules.active_player().waiting_room.content.len(), 6);
+
+        assert_eq!(
+            rules.active_player().level.content.len(),
+            starting_level + 1
+        );
+
+        assert_eq!(rules.active_player().refresh_point, 1);
     }
 }

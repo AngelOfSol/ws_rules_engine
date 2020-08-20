@@ -100,7 +100,7 @@ impl PlayerState {
     }
 
     pub fn needs_to_refresh(&self) -> bool {
-        self.hand.content.is_empty()
+        self.deck.content.is_empty()
     }
 
     /// Attempts to level up with the specified `card`.

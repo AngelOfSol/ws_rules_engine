@@ -1,18 +1,16 @@
 use std::io::*;
 use std::str::FromStr;
 use ws_engine::data::{CardId, Phase};
-use ws_engine::rules::{
-    io::{ChoiceContext, IO},
-    Rules,
-};
+use ws_engine::rules::io::{ChoiceContext, Input, InterruptChoice, Output, RulesEngineIO};
+use ws_engine::rules::Rules;
 use ws_engine::state::player_state::LevelUpResult;
 
 #[derive(Debug)]
 struct BasicIO;
 
 impl BasicIO {
-    fn get_message(
-        options: &[CardId],
+    fn get_message<T: std::fmt::Debug>(
+        options: &[T],
         choosing_player: usize,
         context: ChoiceContext,
         optional: bool,
@@ -36,11 +34,17 @@ impl BasicIO {
                 if optional { "may" } else { "must" },
                 options
             ),
+            ChoiceContext::InterruptTimingChoice => format!(
+                "player {} {}  chooses which to process first among: {:?}",
+                choosing_player,
+                if optional { "may" } else { "must" },
+                options
+            ),
         }
     }
 }
 
-impl IO for BasicIO {
+impl Output for BasicIO {
     fn phase_change(&mut self, phase: Phase, turn_player: usize) {
         println!("Phase Changed: {:?} for player {}", phase, turn_player);
     }
@@ -61,7 +65,79 @@ impl IO for BasicIO {
         println!("player {} clocked card {}", turn_player, card);
     }
 
-    fn ask_card_optional_choice(
+    fn refreshed(&mut self, turn_player: usize) {
+        println!("player {} refreshed", turn_player,);
+    }
+}
+
+impl Input<InterruptChoice> for BasicIO {
+    fn ask_optional_choice(
+        &mut self,
+        options: &[InterruptChoice],
+        choosing_player: usize,
+        context: ChoiceContext,
+    ) -> Option<usize> {
+        println!(
+            "{}",
+            BasicIO::get_message(options, choosing_player, context, true)
+        );
+        let mut choice_buffer = String::new();
+
+        let _ = stdout().flush();
+        let _ = stdin().read_line(&mut choice_buffer);
+
+        let choice_buffer = choice_buffer.trim();
+
+        match choice_buffer {
+            "level" => options
+                .iter()
+                .position(|item| *item == InterruptChoice::Level),
+            "refresh" => options
+                .iter()
+                .position(|item| *item == InterruptChoice::Refresh),
+            _ => None,
+        }
+    }
+
+    fn ask_required_choice(
+        &mut self,
+        options: &[InterruptChoice],
+        choosing_player: usize,
+        context: ChoiceContext,
+    ) -> usize {
+        println!(
+            "{}",
+            BasicIO::get_message(options, choosing_player, context, false)
+        );
+        let mut choice_buffer = String::new();
+
+        let _ = stdout().flush();
+        let _ = stdin().read_line(&mut choice_buffer);
+
+        loop {
+            let _ = stdout().flush();
+            let _ = stdin().read_line(&mut choice_buffer);
+            match choice_buffer.trim() {
+                "level" => {
+                    break options
+                        .iter()
+                        .position(|item| *item == InterruptChoice::Level)
+                        .unwrap()
+                }
+                "refresh" => {
+                    break options
+                        .iter()
+                        .position(|item| *item == InterruptChoice::Refresh)
+                        .unwrap()
+                }
+                _ => (),
+            }
+        }
+    }
+}
+
+impl Input<CardId> for BasicIO {
+    fn ask_optional_choice(
         &mut self,
         options: &[CardId],
         choosing_player: usize,
@@ -86,7 +162,7 @@ impl IO for BasicIO {
         }
     }
 
-    fn ask_card_required_choice(
+    fn ask_required_choice(
         &mut self,
         options: &[CardId],
         choosing_player: usize,
@@ -112,6 +188,8 @@ impl IO for BasicIO {
         options.iter().position(|item| *item == id).unwrap()
     }
 }
+
+impl RulesEngineIO for BasicIO {}
 
 fn main() {
     let mut io = BasicIO;

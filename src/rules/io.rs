@@ -7,11 +7,18 @@ pub enum ChoiceContext {
     ClockPhaseCardToClock,
     HandLimitDiscard,
     LevelUpProcess,
+    InterruptTimingChoice,
+}
+
+#[derive(Debug, Copy, Clone, Eq, PartialEq)]
+pub enum InterruptChoice {
+    Refresh,
+    Level,
 }
 
 /// A trait describing the way the rules engine will request and provide information to the client.
 /// The engine will block until calls to these functions complete.
-pub trait IO {
+pub trait Output {
     /// This is called whenever the current phase changes.  
     ///
     /// The `phase` parameter specifies what phase was entered.
@@ -24,15 +31,15 @@ pub trait IO {
     /// The `card` parameter specifies which card was drawn.
     ///
     /// The `player` parameter specifies who drew the card (not the active player).
-
     fn draw(&mut self, card: CardId, player: usize);
+
     /// This is called whenever a player discards a card.
     ///
     /// The `card` parameter specifies which card was discarded.
     ///
     /// The `player` parameter specifies who drew the card (not the active player).
-
     fn discard(&mut self, card: CardId, player: usize);
+
     /// This is called whenever a player levels up.
     ///
     /// The `result` parameter specifies the result of leveling up,
@@ -50,6 +57,13 @@ pub trait IO {
     /// The `player` parameter specifies who leveled up (not the active player).
     fn clock(&mut self, card: CardId, player: usize);
 
+    /// This is called whenever a player refreshes.
+    ///
+    /// The `player` parameter specifies who leveled up (not the active player).
+    fn refreshed(&mut self, player: usize);
+}
+
+pub trait Input<T> {
     /// This is called whenever the engine needs the user to make a choice
     // of one card from a set of cards.  The user is not required to choose
     // an option, but if they do it needs to be a valid one.
@@ -64,9 +78,9 @@ pub trait IO {
     /// The engine will panic if the return value of this function is not a valid index
     /// into the specified slice.  If no choice was made, this function should return None.
     /// If no `options` is empty, this function should always return None.
-    fn ask_card_optional_choice(
+    fn ask_optional_choice(
         &mut self,
-        options: &[CardId],
+        options: &[T],
         player: usize,
         context: ChoiceContext,
     ) -> Option<usize>;
@@ -84,35 +98,64 @@ pub trait IO {
     ///
     /// The engine will panic if the return value of this function is not a valid index
     /// into the specified slice.
-    fn ask_card_required_choice(
+    fn ask_required_choice(
         &mut self,
-        options: &[CardId],
+        options: &[T],
         player: usize,
         context: ChoiceContext,
     ) -> usize;
 }
 
-impl IO for () {
+pub trait RulesEngineIO: Output + Input<CardId> + Input<InterruptChoice> {}
+
+impl Output for () {
     fn phase_change(&mut self, _: Phase, _: usize) {}
     fn draw(&mut self, _: CardId, _: usize) {}
     fn discard(&mut self, _: CardId, _: usize) {}
     fn level_up(&mut self, _: LevelUpResult, _: usize) {}
     fn clock(&mut self, _: CardId, _: usize) {}
+    fn refreshed(&mut self, _: usize) {}
+}
 
-    fn ask_card_optional_choice(
-        &mut self,
-        cards: &[CardId],
-        _: usize,
-        _: ChoiceContext,
-    ) -> Option<usize> {
-        if cards.is_empty() {
+impl<T> Input<T> for () {
+    fn ask_optional_choice(&mut self, options: &[T], _: usize, _: ChoiceContext) -> Option<usize> {
+        if options.is_empty() {
             None
         } else {
             Some(0)
         }
     }
 
-    fn ask_card_required_choice(&mut self, _: &[CardId], _: usize, _: ChoiceContext) -> usize {
+    fn ask_required_choice(&mut self, _: &[T], _: usize, _: ChoiceContext) -> usize {
         0
     }
 }
+
+impl RulesEngineIO for () {}
+
+pub struct PickX(pub usize);
+
+impl Output for PickX {
+    fn phase_change(&mut self, _: Phase, _: usize) {}
+    fn draw(&mut self, _: CardId, _: usize) {}
+    fn discard(&mut self, _: CardId, _: usize) {}
+    fn level_up(&mut self, _: LevelUpResult, _: usize) {}
+    fn clock(&mut self, _: CardId, _: usize) {}
+    fn refreshed(&mut self, _: usize) {}
+}
+
+impl<T> Input<T> for PickX {
+    fn ask_optional_choice(&mut self, options: &[T], _: usize, _: ChoiceContext) -> Option<usize> {
+        if options.is_empty() {
+            None
+        } else {
+            Some(self.0)
+        }
+    }
+
+    fn ask_required_choice(&mut self, _: &[T], _: usize, _: ChoiceContext) -> usize {
+        self.0
+    }
+}
+
+impl RulesEngineIO for PickX {}
