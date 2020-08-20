@@ -79,49 +79,40 @@ trait EngineInterface {
     ...
 }
 
-buff algorithm
 
-Buff {
-    dependencies: HashSet<Field>,
-    affected: HashSet<Field>,
-    timestamp: Timestamp,
-}
+buff handling Design
+maintain list of all buffs currently affecting the gamestate, with timestamps
 
-let buffs = Vec<Buff>::argument;
-let ordered_renders = Vec<Buff>::empty;
-let put_off = Vec<Buff>::empty;
-let remaining_affected = HashSet<Field>::empty;
-let remaining_dependencies = HashSet<Field>::empty;
+whenever asking to evaluate a cards stat, work backward from the buff list to create a list of buffs that affect it directly or indirectly,
+generate the ordering of calculations
+assemble all the relevant base stats and input them into the resulting formula, and get the result
 
-while !buffs.is_empty || !put_off.is_empty() {
-    if buffs.is_empty() && !put_off.is_empty() {
-        mem::swap(buffs, put_off);
-    }
+include dependencies on owners and positioning
 
-    remaining_affected = buffs.iter().flat_map(|buff| buff.affected.iter()).collect();
-    for buff in buffs {
-        if buff.dependencies.intersection(remaining_affected).is_empty() {
-            buffs.remove(buff);
-            ordered_renders.push(buff);
-        }
-    }
-    remaining_dependencies = buffs.iter().flat_map(|buff| buff.dependencies.iter()).collect();
-    for buff in buffs {
-        if buff.affected.intersection(remaining_dependencies).is_empty() {
-            put_off.push(buff);
-            buffs.remove(buff);
-        }
-    }
+or
 
-   
+handle a list of all buffs
 
-    if !buffs.is_empty() && 
-        ordered_renders.has_not_changed_this_iteration() && 
-        put_off.has_not_changed_this_iteration()
-     {
-        let buff = buffs.iter().min_by(|buff| buff.timestamp);
-        buffs.remove(buff);
-        ordered_renders.push(buff);
-    }
-}
-https://play.rust-lang.org/?version=stable&mode=debug&edition=2018&gist=8f8f82406b6ec5030f2c3e1ab6f61a66
+sample Layer list and ordering:
+1) Granted Abilities
+2) Name
+3) Traits
+4) Color
+5) Cost
+6) Level
+7) Soul
+8) Power
+9) Power that depends on other characters Power
+
+decide arbitrary field execution order at the expense of correctness
+render each layer one by one on the entire gamestate
+
+invalidate the cache as often as needed
+    - when the list of buffs changes
+    - when the positions of cards on the stage change
+    - when cards change zones 
+    - create a list of invalidation metrics that the buffs should keep track of to tell the cache when to invalidate?
+
+
+iterate through every cards abilities?
+have ability triggers require the zone they need to be in as a required trigger condition

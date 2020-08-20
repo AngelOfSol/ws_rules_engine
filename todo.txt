@@ -37,9 +37,15 @@
     [x] move 6 cards to the bottom of the level zone
     [x] move card to level zone
     [x] log leveling event
-[] add documentation comments to everything
+[x] add documentation comments to everything
 [x] make sure clock phase can handle zero cards in hand
     [x] clock phase should ask for a Some(card) or None, and provide no options
+[] start adding integration tests
+    [x] integ IO helper
+    [x] logs every event and who they happened to
+    [x] logs every choice to be made, by who, and what answer should be given in that context
+    [x] provide structure for logged events that can be tested versus while the game is run
+    [] add an actual integ test
 [] change active_player to PlayerID for more typesafety
 [] handle refreshing
     [] create interrupt processing for refreshing
@@ -84,15 +90,8 @@
     [] pay cost interface
 [] add (3) ENCORE to every character
 [] move to events rather than function call per event type
-
 [] add gamestate rendering
     [] instead of sending our internal rules engine struct over to the user
     [] send a rendered version that puts info directly in the zones and slots instead
-[] start adding integration tests
-    [x] integ IO helper
-    [x] logs every event and who they happened to
-    [x] logs every choice to be made, by who, and what answer should be given in that context
-    [x] provide structure for logged events that can be tested versus while the game is run
-    [] add an actual integ test
 
 
