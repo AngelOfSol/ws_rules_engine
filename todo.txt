@@ -46,12 +46,11 @@
     [x] logs every choice to be made, by who, and what answer should be given in that context
     [x] provide structure for logged events that can be tested versus while the game is run
     [] add an actual integ test
-[] change active_player to PlayerID for more typesafety
 [] handle refreshing
     [] create interrupt processing for refreshing
     [] make sure that player gets to choose between refresh and level, when they both happen at the same time
         [] add integration tests to make sure this works properly
-    [] move waiting room to deck
+    [x] move waiting room to deck
     [] add a point to the refresh point
     [] handle the refresh point at the correct timing
     [] introduce check timings
@@ -69,6 +68,7 @@
         [] base level
     [] add color restrictions
         [] base color
+[] change active_player to PlayerID for more typesafety
 [] add climax phase
     [] climaxes don't do anything but exist and then go to the waiting room
 [] add attack steps

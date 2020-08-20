@@ -43,6 +43,10 @@ impl ZoneState {
                 .remove(self.content.iter().position(|item| *item == card)?),
         )
     }
+
+    pub fn shuffle(&mut self) {
+        // TODO: actually shuffle cards
+    }
 }
 
 #[cfg(test)]

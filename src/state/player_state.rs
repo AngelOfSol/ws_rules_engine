@@ -15,12 +15,16 @@ pub struct PlayerState {
     pub waiting_room: ZoneState,
     pub clock: ZoneState,
     pub level: ZoneState,
-    base_hand_limit: usize,
+    pub base_hand_limit: usize,
+    pub refresh_point: usize,
 }
 
 /// ZST representing the deck being empty.
 #[derive(Debug, Copy, Clone, Eq, PartialEq)]
 pub struct DeckEmpty;
+
+#[derive(Debug, Copy, Clone, Eq, PartialEq)]
+pub struct DeckNotEmpty;
 
 /// The kinds of errors attempting to discard
 /// a card can create.
@@ -95,6 +99,10 @@ impl PlayerState {
         self.clock.content.len() > MAX_CLOCK_SIZE
     }
 
+    pub fn needs_to_refresh(&self) -> bool {
+        self.hand.content.is_empty()
+    }
+
     /// Attempts to level up with the specified `card`.
     ///
     /// Returns the result of the level up, or an error
@@ -123,6 +131,20 @@ impl PlayerState {
             sent_to_waiting_room: bottom_clock,
         })
     }
+
+    pub fn refresh(&mut self) -> Result<bool, DeckNotEmpty> {
+        if !self.needs_to_refresh() {
+            return Err(DeckNotEmpty);
+        }
+
+        self.deck.content = self.waiting_room.content.drain(..).collect();
+
+        self.refresh_point += 1;
+
+        self.deck.shuffle();
+
+        Ok(false)
+    }
 }
 
 impl Default for PlayerState {
@@ -134,6 +156,7 @@ impl Default for PlayerState {
             clock: ZoneState::new(),
             level: ZoneState::new(),
             base_hand_limit: 7,
+            refresh_point: 0,
         }
     }
 }
@@ -252,5 +275,24 @@ mod tests {
             player.level_up_with(0.into()).unwrap_err(),
             LevelUpError::CannotLevel
         );
+    }
+
+    #[test]
+    fn refresh() {
+        let mut player = PlayerState {
+            waiting_room: ZoneState::with_content(vec![0.into()]),
+            ..Default::default()
+        };
+
+        let starting_refresh_point = player.refresh_point;
+
+        assert!(player.needs_to_refresh());
+
+        assert_eq!(player.refresh(), Ok(false));
+
+        assert_eq!(player.deck.content.len(), 1);
+        assert_eq!(player.waiting_room.content.len(), 0);
+        assert_eq!(player.deck.content, vec![0.into()]);
+        assert_eq!(player.refresh_point, starting_refresh_point + 1);
     }
 }
